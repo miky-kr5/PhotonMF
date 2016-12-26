@@ -10,6 +10,7 @@
 #include "ray.hpp"
 #include "figure.hpp"
 #include "sphere.hpp"
+#include "plane.hpp"
 #include "light.hpp"
 #include "tracer.hpp"
 
@@ -30,6 +31,7 @@ static vec3 ** image;
 int main(int argc, char ** argv) {
   FILE * out;
   Sphere * s;
+  Plane * p;
   Light * l;
   Ray r;
   vec2 sample;
@@ -98,12 +100,16 @@ int main(int argc, char ** argv) {
   figures.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(-1.0f, -1.0f, -2.0f, 0.5f);
-  s->set_color(0.5f, 0.5f, 0.5f);
+  s->set_color(1.0f, 0.0f, 1.0f);
   figures.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(0.0f, 0.0f, -2.0f, 1.0f);
   s->set_color(1.0f, 1.0f, 0.0f);
   figures.push_back(static_cast<Figure *>(s));
+
+  p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
+  p->set_color(0.0f, 1.0f, 1.0f);
+  figures.push_back(static_cast<Figure *>(p));
 
   l = new Light();
   lights.push_back(l);
@@ -124,7 +130,7 @@ int main(int argc, char ** argv) {
   }
 
   for (size_t i = 0; i < figures.size(); i++) {
-    delete static_cast<Sphere *>(figures[i]);
+    delete figures[i];
   }
   figures.clear();
 

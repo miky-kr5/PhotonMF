@@ -30,7 +30,8 @@ bool Sphere::intersect(Ray & r, float & t, vec3 & n) const {
     t = (-b - sqrt(d)) / (2 * a);
     i = vec3(r.m_origin + (t * r.m_direction));
     n = normalize(vec3((i - m_center) / m_radius));
-  }
+    return t >= 0.0f;
 
-  return d >= 0.0f;
+  } else
+    return false;
 }
