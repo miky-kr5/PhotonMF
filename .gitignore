@@ -28,3 +28,6 @@
 *.out
 *.app
 ray
+
+# Emacs droppings
+*~

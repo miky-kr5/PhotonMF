@@ -2,7 +2,7 @@
 #ifndef SPHERE_HPP
 #define SPHERE_HPP
 
-#include <glm/vec3.hpp>
+#include <glm/glm.hpp>
 
 #include "figure.hpp"
 
@@ -21,7 +21,7 @@ public:
 
   virtual ~Sphere() { }
 
-  virtual bool intersect(Ray & r, float & t) const;
+  virtual bool intersect(Ray & r, float & t, vec3 & n) const;
 };
 
 #endif

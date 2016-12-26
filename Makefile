@@ -1,6 +1,6 @@
 TARGET = ray
-HEADERS = ray.hpp sphere.hpp figure.hpp
-OBJECTS = main.o sphere.o
+HEADERS = ray.hpp sphere.hpp figure.hpp light.hpp tracer.hpp
+OBJECTS = main.o sphere.o tracer.o
 CXX = g++
 CXXFLAGS = -ansi -pedantic -Wall -g -DGLM_FORCE_RADIANS -fopenmp
 LDLIBS = -lm
@@ -15,6 +15,8 @@ main.o: main.cpp $(HEADERS)
 
 sphere.o: sphere.cpp $(HEADERS)
 
+tracer.o: tracer.cpp $(HEADERS)
+
 .PHONY: clean
 clean:
-	$(RM) $(TARGET) *.o
+	$(RM) $(TARGET) $(OBJECTS)
