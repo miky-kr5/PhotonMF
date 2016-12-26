@@ -45,33 +45,33 @@ int main(int argc, char ** argv) {
     return EXIT_FAILURE;
   }
 
-  input_file = argv[2];
+  input_file = argv[1];
 
-  if(argc >= 4) {
-    g_h = atoi(argv[2]);
+  if(argc >= 5) {
+    g_h = atoi(argv[3]);
     if (g_h <= 0) {
       cerr << "USAGE: " << argv[0] << " IN FILE [OUT FILE [HEIGHT WIDTH [SAMPLES [FIELD OF VIEW]]]]" << endl;
       cerr << "HEIGHT must be positive" << endl;
       return EXIT_FAILURE;
     }
 
-    g_w = atoi(argv[3]);
+    g_w = atoi(argv[4]);
     if (g_w <= 0) {
       cerr << "USAGE: " << argv[0] << " IN FILE [OUT FILE [HEIGHT WIDTH [SAMPLES [FIELD OF VIEW]]]]" << endl;
       cerr << "WIDTH must be positive" << endl;
       return EXIT_FAILURE;
     }
     
-    if(argc >= 5) {
-      g_samples = atoi(argv[4]);
+    if(argc >= 6) {
+      g_samples = atoi(argv[5]);
       if (g_samples <= 0) {
 	  cerr << "USAGE: " << argv[0] << " IN FILE [OUT FILE [HEIGHT WIDTH [SAMPLES [FIELD OF VIEW]]]]" << endl;
 	  cerr << "SAMPLES must be greater than 1" << endl;
 	  return EXIT_FAILURE;
       }
       
-      if(argc >= 6) {
-	g_fov = atof(argv[5]);
+      if(argc >= 7) {
+	g_fov = atof(argv[6]);
 	if (g_fov <= 0) {
 	  cerr << "USAGE: " << argv[0] << " IN FILE [OUT FILE [HEIGHT WIDTH [SAMPLES [FIELD OF VIEW]]]]" << endl;
 	  cerr << "FIELD OF VIEW must be greater than 1.0" << endl;
@@ -81,7 +81,7 @@ int main(int argc, char ** argv) {
     }
   }
 
-  out = fopen(argc >= 2 ? argv[1] : OUT_FILE, "wb");
+  out = fopen(argc >= 3 ? argv[2] : OUT_FILE, "wb");
 
   image = new vec3*[g_h];
   for (int i = 0; i < g_h; i++) {
