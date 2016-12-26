@@ -1,0 +1,9 @@
+* PhotonMF
+
+An implementation of path tracing with photon mapping.
+
+** Sample
+
+An image generated with the current version of the program:
+
+[[file:output.ppm]]
