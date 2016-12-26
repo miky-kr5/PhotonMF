@@ -14,7 +14,9 @@ public:
 
   virtual ~Figure() { }
 
-  virtual bool intersect(Ray & r, float & t, vec3 & n) const = 0;
+  virtual bool intersect(Ray & r, float & t) const = 0;
+
+  virtual vec3 normal_at_int(Ray & r, float & t) const = 0;
 
   virtual void set_color(float r, float g, float b) {
     color = vec3(r, g, b);

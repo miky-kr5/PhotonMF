@@ -112,6 +112,12 @@ int main(int argc, char ** argv) {
   figures.push_back(static_cast<Figure *>(p));
 
   l = new Light();
+  l->m_position = normalize(vec3(1.0f, 1.0f, 1.0f));
+  lights.push_back(l);
+
+  l = new Light();
+  l->m_position = normalize(vec3(-1.0f, 0.0f, 0.0f));
+  l->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
   lights.push_back(l);
 
   tracer = Tracer(g_h, g_w, g_fov);

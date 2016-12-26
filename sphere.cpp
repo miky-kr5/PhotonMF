@@ -4,8 +4,7 @@
 
 using glm::normalize;
 
-bool Sphere::intersect(Ray & r, float & t, vec3 & n) const {
-  vec3 i;
+bool Sphere::intersect(Ray & r, float & t) const {
   float d;
 
   float a = (r.m_direction.x * r.m_direction.x) +
@@ -28,10 +27,13 @@ bool Sphere::intersect(Ray & r, float & t, vec3 & n) const {
 
   if (d >= 0.0f) {
     t = (-b - sqrt(d)) / (2 * a);
-    i = vec3(r.m_origin + (t * r.m_direction));
-    n = normalize(vec3((i - m_center) / m_radius));
     return t >= 0.0f;
 
   } else
     return false;
+}
+
+vec3 Sphere::normal_at_int(Ray & r, float & t) const {
+  vec3 i = vec3(r.m_origin + (t * r.m_direction));
+  return normalize(vec3((i - m_center) / m_radius));
 }

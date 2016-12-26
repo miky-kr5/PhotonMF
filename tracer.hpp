@@ -11,7 +11,6 @@
 #include "ray.hpp"
 
 using std::vector;
-using glm::radians;
 using glm::vec3;
 using glm::vec2;
 

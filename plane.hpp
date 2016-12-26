@@ -22,7 +22,9 @@ public:
 
   virtual ~Plane() { }
 
-  virtual bool intersect(Ray & r, float & t, vec3 & n) const;
+  virtual bool intersect(Ray & r, float & t) const;
+
+  virtual vec3 normal_at_int(Ray & r, float & t) const;
 };
 
 
