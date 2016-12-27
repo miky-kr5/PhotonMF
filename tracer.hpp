@@ -22,7 +22,8 @@ public:
   float m_a_ratio;
 
   Tracer();
-  Tracer(int w, int h, float fov);
+
+  Tracer(int h, int w, float fov);
 
   vec2 sample_pixel(int i, int j) const;
   vec3 trace_ray(Ray & r, vector<Figure *> & f, vector<Light *> & l, unsigned int rec_level) const;
