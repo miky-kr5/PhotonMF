@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <cstdio>
 #include <cstdlib>
@@ -38,8 +39,10 @@ int main(int argc, char ** argv) {
   vector<Figure *> figures;
   vector<Light *> lights;
   Tracer tracer;
+  int total;
+  int current = 0;
 
-  if(argc < 2 || argc == 3 || argc > 6) {
+  if(argc < 2 || argc == 3 || argc > 7) {
     cerr << "USAGE: " << argv[0] << " IN FILE [OUT FILE [HEIGHT WIDTH [SAMPLES [FIELD OF VIEW]]]]" << endl;
     return EXIT_FAILURE;
   }
@@ -108,32 +111,64 @@ int main(int argc, char ** argv) {
   figures.push_back(static_cast<Figure *>(s));
 
   p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-  p->set_color(0.0f, 1.0f, 1.0f);
+  p->set_color(1.0f, 0.5f, 0.4f);
   figures.push_back(static_cast<Figure *>(p));
+
+  s = new Sphere(0.0f, 0.0f, -1.0f, 0.25f);
+  s->set_color(1.0f, 1.0f, 1.0f);
+  figures.push_back(static_cast<Figure *>(s));
+
+  s = new Sphere(-1.5f, 0.0f, -2.0f, 0.5f);
+  s->set_color(1.0f, 1.0f, 1.0f);
+  figures.push_back(static_cast<Figure *>(s));
+
+  s = new Sphere(1.5f, 0.0f, -2.0f, 0.5f);
+  s->set_color(1.0f, 1.0f, 1.0f);
+  figures.push_back(static_cast<Figure *>(s));
+
+  s = new Sphere(0.0f, 1.5f, -2.0f, 0.5f);
+  s->set_color(1.0f, 1.0f, 1.0f);
+  figures.push_back(static_cast<Figure *>(s));
 
   l = new Light();
   l->m_position = normalize(vec3(1.0f, 1.0f, 1.0f));
+  l->m_diffuse = vec3(0.0f, 1.0f, 1.0f);
   lights.push_back(l);
 
   l = new Light();
-  l->m_position = normalize(vec3(-1.0f, 0.0f, 0.0f));
+  l->m_position = normalize(vec3(-1.0f, 1.0f, 1.0f));
   l->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+  lights.push_back(l);
+
+  l = new Light();
+  l->m_position = normalize(vec3(0.0f, 1.0f, -1.0f));
+  l->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
   lights.push_back(l);
 
   tracer = Tracer(g_h, g_w, g_fov);
 
-#pragma omp parallel for schedule(dynamic, 1) private(r, sample)
+  total = g_h * g_w * g_samples;
+
+#pragma omp parallel for schedule(dynamic, 1) private(r, sample) shared(current)
   for (int i = 0; i < g_h; i++) {
     for (int j = 0; j < g_w; j++) {
       for (int k = 0; k < g_samples; k++) {
 	sample = tracer.sample_pixel(i, j);
 	r = Ray(normalize(vec3(sample, -1.0f) - vec3(0.0f, 0.0f, 0.0f)), vec3(0.0f, 0.0f, 0.0f));
 	image[i][j] += tracer.trace_ray(r, figures, lights, MAX_RECURSION);
+#pragma omp critical
+	{
+	  current++;
+	}
       }
-
       image[i][j] /= g_samples;
     }
+#pragma omp critical
+    {
+      cout << "\r" << setw(3) << static_cast<int>((static_cast<float>(current) / static_cast<float>(total)) * 100.0f) << "% done";
+    }
   }
+  cout << endl;
 
   for (size_t i = 0; i < figures.size(); i++) {
     delete figures[i];

@@ -5,6 +5,7 @@
 using glm::normalize;
 
 bool Sphere::intersect(Ray & r, float & t) const {
+  float t1, t2;
   float d;
 
   float a = (r.m_direction.x * r.m_direction.x) +
@@ -26,7 +27,9 @@ bool Sphere::intersect(Ray & r, float & t) const {
   d = (b * b) - (4 * a * c);
 
   if (d >= 0.0f) {
-    t = (-b - sqrt(d)) / (2 * a);
+    t1 = (-b - sqrt(d)) / (2 * a); 
+    t2 = (-b + sqrt(d)) / (2 * a);
+    t = t1 < t2 ? t1 : t2;
     return t >= 0.0f;
 
   } else

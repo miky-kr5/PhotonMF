@@ -13,7 +13,7 @@ public:
   vec3 m_specular;
   vec3 m_ambient;
 
-  Light(): m_position(vec3(0.0f)), m_diffuse(vec3(1.0f)), m_specular(vec3(1.0f)), m_ambient(vec3(0.1f)) { }
+  Light(): m_position(vec3(0.0f)), m_diffuse(vec3(1.0f)), m_specular(vec3(1.0f)), m_ambient(vec3(0.05f)) { }
   Light(vec3 _p, vec3 _d, vec3 _s, vec3 _a): m_position(_p), m_diffuse(_d), m_specular(_s), m_ambient(_a) { }
 };
 

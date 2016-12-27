@@ -7,6 +7,8 @@
 
 #include "tracer.hpp"
 
+#define PI 3.14159265358979f
+
 using namespace std;
 
 using std::numeric_limits;
@@ -45,10 +47,12 @@ vec2 Tracer::sample_pixel(int i, int j) const {
 }
 
 vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & vf, vector<Light *> & vl, unsigned int rec_level) const {
+  size_t f_index;
   float t, _t, n_dot_l;
   Figure * _f;
   vec3 n, color, i_pos;
-  vec3 light_dir;
+  Ray sr;
+  bool vis;
 
   t = numeric_limits<float>::max();
   _f = NULL;
@@ -57,17 +61,27 @@ vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & vf, vector<Light *> & vl, uns
     if (vf[f]->intersect(r, _t) && _t < t) {
       t = _t;
       _f = vf[f];
+      f_index = f;
     }
   }
-  
-  i_pos = r.m_origin + (t * r.m_direction);
 
   if (_f != NULL) {
+    i_pos = r.m_origin + (t * r.m_direction);
+    n = _f->normal_at_int(r, t);
+
     for (size_t l = 0; l < vl.size(); l++) {
-      n = _f->normal_at_int(r, t);
-      light_dir = vl[l]->m_position;
-      n_dot_l = max(dot(n, light_dir), 0.0);
-      color += (_f->color / 3.1416f) * vl[l]->m_diffuse * n_dot_l;
+      vis = true;
+      sr = Ray(vl[l]->m_position, i_pos);
+
+      for (size_t f = 0; f < vf.size(); f++) {
+	if (f != f_index && vf[f]->intersect(sr, _t)) {
+	  vis = false;
+	  break;
+	}
+      }
+
+      n_dot_l = max(dot(n, vl[l]->m_position), 0.0);
+      color += (vis ? 1.0f : 0.0f) * (_f->color / PI) * vl[l]->m_diffuse * n_dot_l;
     }
 
     return color;
