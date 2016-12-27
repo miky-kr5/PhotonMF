@@ -11,6 +11,7 @@ using glm::vec3;
 class Figure {
 public:
   vec3 color;
+  float rho;
 
   virtual ~Figure() { }
 

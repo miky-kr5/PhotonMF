@@ -9,6 +9,8 @@
 
 #define PI 3.14159265358979f
 #define SHININESS 89.0f
+#define MAX_RECURSION 9
+#define BIAS 0.000001f
 
 using namespace std;
 
@@ -54,7 +56,7 @@ vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & vf, vector<Light *> & vl, uns
   float t, _t, n_dot_l;
   Figure * _f;
   vec3 n, color, i_pos, ref;
-  Ray sr;
+  Ray sr, rr;
   bool vis;
 
   t = numeric_limits<float>::max();
@@ -72,6 +74,12 @@ vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & vf, vector<Light *> & vl, uns
     i_pos = r.m_origin + (t * r.m_direction);
     n = _f->normal_at_int(r, t);
 
+    if (vis && _f->rho > 0.0f && rec_level < MAX_RECURSION) {
+      rr = Ray(reflect(r.m_direction, n), i_pos + n * BIAS);
+      color = _f->rho * trace_ray(rr, vf, vl, rec_level + 1);
+    } else if (rec_level >= MAX_RECURSION)
+      return vec3(BCKG_COLOR);
+
     for (size_t l = 0; l < vl.size(); l++) {
       vis = true;
       sr = Ray(vl[l]->m_position, i_pos);
@@ -82,6 +90,8 @@ vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & vf, vector<Light *> & vl, uns
 	  break;
 	}
       }
+
+      color += 0.08f * BCKG_COLOR;
 
       n_dot_l = max(dot(n, vl[l]->m_position), 0.0);
       color += (vis ? 1.0f : 0.0f) * (_f->color / PI) * vl[l]->m_diffuse * n_dot_l;

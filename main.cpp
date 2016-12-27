@@ -18,8 +18,6 @@
 using namespace std;
 using namespace glm;
 
-#define MAX_RECURSION 9
-
 static const char * OUT_FILE = "output.ppm";
 
 static char * input_file;
@@ -110,24 +108,28 @@ int main(int argc, char ** argv) {
   s->set_color(1.0f, 1.0f, 0.0f);
   figures.push_back(static_cast<Figure *>(s));
 
-  p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
+  p = new Plane(vec3(0.0f, -1.5f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
   p->set_color(1.0f, 0.5f, 0.4f);
   figures.push_back(static_cast<Figure *>(p));
 
   s = new Sphere(0.0f, 0.0f, -1.0f, 0.25f);
   s->set_color(1.0f, 1.0f, 1.0f);
+  s->rho = 0.1f;
   figures.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(-1.5f, 0.0f, -2.0f, 0.5f);
   s->set_color(1.0f, 1.0f, 1.0f);
+  s->rho = 0.3f;
   figures.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(1.5f, 0.0f, -2.0f, 0.5f);
   s->set_color(1.0f, 1.0f, 1.0f);
+  s->rho = 0.08f;
   figures.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(0.0f, 1.5f, -2.0f, 0.5f);
   s->set_color(1.0f, 1.0f, 1.0f);
+  s->rho = 0.5f;
   figures.push_back(static_cast<Figure *>(s));
 
   l = new Light();
@@ -155,7 +157,7 @@ int main(int argc, char ** argv) {
       for (int k = 0; k < g_samples; k++) {
 	sample = tracer.sample_pixel(i, j);
 	r = Ray(normalize(vec3(sample, -1.0f) - vec3(0.0f, 0.0f, 0.0f)), vec3(0.0f, 0.0f, 0.0f));
-	image[i][j] += tracer.trace_ray(r, figures, lights, MAX_RECURSION);
+	image[i][j] += tracer.trace_ray(r, figures, lights, 0);
 #pragma omp critical
 	{
 	  current++;
