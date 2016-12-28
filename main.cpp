@@ -12,6 +12,7 @@
 #include "figure.hpp"
 #include "sphere.hpp"
 #include "plane.hpp"
+#include "disk.hpp"
 #include "light.hpp"
 #include "tracer.hpp"
 
@@ -40,7 +41,7 @@ int main(int argc, char ** argv) {
   int total;
   int current = 0;
 
-  if(argc < 2 || argc == 3 || argc > 7) {
+  if(argc < 2 || argc > 7) {
     cerr << "USAGE: " << argv[0] << " IN FILE [OUT FILE [HEIGHT WIDTH [SAMPLES [FIELD OF VIEW]]]]" << endl;
     return EXIT_FAILURE;
   }
@@ -145,6 +146,7 @@ int main(int argc, char ** argv) {
 static void scene_1(vector<Figure *> & vf, vector<Light *> & vl) {
   Sphere * s;
   Plane * p;
+  Disk * d;
   Light * l;
 
   s = new Sphere(1.0f, 1.0f, -2.0f, 0.5f);
@@ -171,11 +173,6 @@ static void scene_1(vector<Figure *> & vf, vector<Light *> & vl) {
   p->set_color(1.0f, 0.5f, 0.4f);
   vf.push_back(static_cast<Figure *>(p));
 
-  s = new Sphere(0.0f, 0.0f, -1.0f, 0.25f);
-  s->set_color(1.0f, 1.0f, 1.0f);
-  s->rho = 0.1f;
-  vf.push_back(static_cast<Figure *>(s));
-
   s = new Sphere(-1.5f, 0.0f, -2.0f, 0.5f);
   s->set_color(1.0f, 1.0f, 1.0f);
   s->rho = 0.3f;
@@ -190,6 +187,16 @@ static void scene_1(vector<Figure *> & vf, vector<Light *> & vl) {
   s->set_color(1.0f, 1.0f, 1.0f);
   s->rho = 0.5f;
   vf.push_back(static_cast<Figure *>(s));
+
+  s = new Sphere(0.0f, 0.0f, -1.0f, 0.25f);
+  s->set_color(1.0f, 1.0f, 1.0f);
+  s->rho = 0.1f;
+  vf.push_back(static_cast<Figure *>(s));
+
+  d = new Disk(vec3(0.0f, 2.0f, -2.0f), vec3(0.0f, -1.0f, 0.0f), 1.0f);
+  d->set_color(1.0f, 1.0f, 0.0f);
+  d->rho = 0.8f;
+  vf.push_back(static_cast<Figure *>(d));
 
   l = new Light();
   l->m_position = normalize(vec3(1.0f, 1.0f, 1.0f));

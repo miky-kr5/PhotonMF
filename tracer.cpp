@@ -74,7 +74,7 @@ vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & vf, vector<Light *> & vl, uns
     i_pos = r.m_origin + (t * r.m_direction);
     n = _f->normal_at_int(r, t);
 
-    if (vis && _f->rho > 0.0f && rec_level < MAX_RECURSION) {
+    if (_f->rho > 0.0f && rec_level < MAX_RECURSION) {
       rr = Ray(reflect(r.m_direction, n), i_pos + n * BIAS);
       color = _f->rho * trace_ray(rr, vf, vl, rec_level + 1);
     } else if (rec_level >= MAX_RECURSION)

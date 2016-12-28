@@ -5,12 +5,14 @@
 #include <glm/vec3.hpp>
 
 #include "ray.hpp"
+#include "material.hpp"
 
 using glm::vec3;
 
 class Figure {
 public:
   vec3 color;
+  Material m_mat;
   float rho;
 
   virtual ~Figure() { }

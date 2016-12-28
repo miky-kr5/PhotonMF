@@ -1,6 +1,6 @@
 TARGET = ray
-HEADERS = ray.hpp figure.hpp sphere.hpp plane.hpp light.hpp tracer.hpp
-OBJECTS = main.o sphere.o plane.o tracer.o
+HEADERS = ray.hpp figure.hpp sphere.hpp plane.hpp disk.hpp material.hpp light.hpp tracer.hpp 
+OBJECTS = main.o sphere.o plane.o disk.o tracer.o
 CXX = g++
 CXXFLAGS = -ansi -pedantic -Wall -g -DGLM_FORCE_RADIANS -fopenmp
 LDLIBS = -lm
@@ -16,6 +16,8 @@ main.o: main.cpp $(HEADERS)
 sphere.o: sphere.cpp $(HEADERS)
 
 plane.o: plane.cpp $(HEADERS)
+
+disk.o: disk.cpp $(HEADERS)
 
 tracer.o: tracer.cpp $(HEADERS)
 
