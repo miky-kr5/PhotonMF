@@ -82,10 +82,10 @@ vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & vf, vector<Light *> & vl, uns
 
     for (size_t l = 0; l < vl.size(); l++) {
       vis = true;
-      sr = Ray(vl[l]->m_position, i_pos);
+      sr = Ray(vl[l]->m_position, i_pos + n * BIAS);
 
       for (size_t f = 0; f < vf.size(); f++) {
-	if (f != f_index && vf[f]->intersect(sr, _t)) {
+	if (vf[f]->intersect(sr, _t)) {
 	  vis = false;
 	  break;
 	}
