@@ -1,14 +1,10 @@
-#include <iostream>
 #include <limits>
 #include <cstdlib>
-#include <cmath>
 
 #include <omp.h>
 
 #include "tracer.hpp"
 
-#define PI 3.14159265358979f
-#define SHININESS 89.0f
 #define MAX_RECURSION 9
 #define BIAS 0.000001f
 
@@ -20,21 +16,12 @@ using glm::radians;
 using glm::dot;
 using glm::reflect;
 using glm::clamp;
+using glm::tan;
 
 static const vec3 BCKG_COLOR = vec3(0.16f, 0.66f, 0.72f);
 
-static inline float max(float a, float b) {
-  return a >= b ? a : b;
-}
-
 static inline float random01() {
   return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-}
-
-Tracer::Tracer(): m_h(480), m_w(640), m_fov(90.0f), m_a_ratio(640.0f / 480.0f) {}
-
-Tracer::Tracer(int h, int w, float fov): m_h(h), m_w(w), m_fov(fov) {
-  m_a_ratio = static_cast<float>(w) / static_cast<float>(h);
 }
 
 vec2 Tracer::sample_pixel(int i, int j) const {
@@ -51,9 +38,8 @@ vec2 Tracer::sample_pixel(int i, int j) const {
   return vec2(pxS, pyS);
 }
 
-vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & vf, vector<Light *> & vl, unsigned int rec_level) const {
-  size_t f_index;
-  float t, _t, n_dot_l;
+vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *> & v_lights, unsigned int rec_level) const {
+  float t, _t;
   Figure * _f;
   vec3 n, color, i_pos, ref;
   Ray sr, rr;
@@ -62,11 +48,10 @@ vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & vf, vector<Light *> & vl, uns
   t = numeric_limits<float>::max();
   _f = NULL;
   
-  for (size_t f = 0; f < vf.size(); f++) {
-    if (vf[f]->intersect(r, _t) && _t < t) {
+  for (size_t f = 0; f < v_figures.size(); f++) {
+    if (v_figures[f]->intersect(r, _t) && _t < t) {
       t = _t;
-      _f = vf[f];
-      f_index = f;
+      _f = v_figures[f];
     }
   }
 
@@ -74,33 +59,29 @@ vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & vf, vector<Light *> & vl, uns
     i_pos = r.m_origin + (t * r.m_direction);
     n = _f->normal_at_int(r, t);
 
-    if (_f->rho > 0.0f && rec_level < MAX_RECURSION) {
-      rr = Ray(reflect(r.m_direction, n), i_pos + n * BIAS);
-      color = _f->rho * trace_ray(rr, vf, vl, rec_level + 1);
-    } else if (rec_level >= MAX_RECURSION)
-      return vec3(BCKG_COLOR);
-
-    for (size_t l = 0; l < vl.size(); l++) {
+    for (size_t l = 0; l < v_lights.size(); l++) {
       vis = true;
-      sr = Ray(vl[l]->m_position, i_pos + n * BIAS);
+      sr = Ray(v_lights[l]->m_position, i_pos + n * BIAS);
 
-      for (size_t f = 0; f < vf.size(); f++) {
-	if (vf[f]->intersect(sr, _t)) {
+      for (size_t f = 0; f < v_figures.size(); f++) {
+	if (v_figures[f]->intersect(sr, _t)) {
 	  vis = false;
 	  break;
 	}
       }
 
-      color += 0.08f * BCKG_COLOR;
-
-      n_dot_l = max(dot(n, vl[l]->m_position), 0.0);
-      color += (vis ? 1.0f : 0.0f) * (_f->color / PI) * vl[l]->m_diffuse * n_dot_l;
-
-      ref = reflect(vl[l]->m_position, n);
-      color += (vis ? 1.0f : 0.0f) * vl[l]->m_specular * pow(max(dot(ref, r.m_direction), 0.0f), SHININESS);
+      color += (vis ? 1.0f : 0.0f) * v_lights[l]->shade(n, r, _f->m_mat);
     }
 
+    if (_f->m_mat.m_rho > 0.0f && rec_level < MAX_RECURSION) {
+      rr = Ray(reflect(r.m_direction, n), i_pos + n * BIAS);
+      color += _f->m_mat.m_rho * trace_ray(rr, v_figures, v_lights, rec_level + 1);
+
+    } else if (rec_level >= MAX_RECURSION)
+      return vec3(BCKG_COLOR);
+
     return clamp(color, 0.0f, 1.0f);
+
   } else
     return vec3(BCKG_COLOR);
 }

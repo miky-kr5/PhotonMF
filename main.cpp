@@ -14,6 +14,7 @@
 #include "plane.hpp"
 #include "disk.hpp"
 #include "light.hpp"
+#include "directional_light.hpp"
 #include "tracer.hpp"
 
 using namespace std;
@@ -147,105 +148,106 @@ static void scene_1(vector<Figure *> & vf, vector<Light *> & vl) {
   Sphere * s;
   Plane * p;
   Disk * d;
-  Light * l;
+  DirectionalLight * l;
 
   s = new Sphere(1.0f, 1.0f, -2.0f, 0.5f);
-  s->set_color(1.0f, 0.0f, 0.0f);
+  s->m_mat.m_diffuse = vec3(1.0f, 0.0f, 0.0f);
   vf.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(-1.0f, 1.0f, -2.0f, 0.5f);
-  s->set_color(0.0f, 1.0f, 0.0f);
+  s->m_mat.m_diffuse = vec3(0.0f, 1.0f, 0.0f);
   vf.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(1.0f, -1.0f, -2.0f, 0.5f);
-  s->set_color(0.0f, 0.0f, 1.0f);
+  s->m_mat.m_diffuse = vec3(0.0f, 0.0f, 1.0f);
   vf.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(-1.0f, -1.0f, -2.0f, 0.5f);
-  s->set_color(1.0f, 0.0f, 1.0f);
+  s->m_mat.m_diffuse = vec3(1.0f, 0.0f, 1.0f);
   vf.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(0.0f, 0.0f, -2.0f, 1.0f);
-  s->set_color(1.0f, 1.0f, 0.0f);
+  //s->set_color(1.0f, 1.0f, 0.0f);
+  s->m_mat.m_diffuse = vec3(1.0f, 1.0f, 0.0f);
   vf.push_back(static_cast<Figure *>(s));
 
   p = new Plane(vec3(0.0f, -1.5f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-  p->set_color(1.0f, 0.5f, 0.4f);
+  p->m_mat.m_diffuse = vec3(1.0f, 0.5f, 0.4f);
   vf.push_back(static_cast<Figure *>(p));
 
   s = new Sphere(-1.5f, 0.0f, -2.0f, 0.5f);
-  s->set_color(1.0f, 1.0f, 1.0f);
-  s->rho = 0.3f;
+  s->m_mat.m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+  s->m_mat.m_rho = 0.3f;
   vf.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(1.5f, 0.0f, -2.0f, 0.5f);
-  s->set_color(1.0f, 1.0f, 1.0f);
-  s->rho = 0.08f;
+  s->m_mat.m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+  s->m_mat.m_rho = 0.08f;
   vf.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(0.0f, 1.5f, -2.0f, 0.5f);
-  s->set_color(1.0f, 1.0f, 1.0f);
-  s->rho = 0.5f;
+  s->m_mat.m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+  s->m_mat.m_rho = 0.5f;
   vf.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(0.0f, 0.0f, -1.0f, 0.25f);
-  s->set_color(1.0f, 1.0f, 1.0f);
-  s->rho = 0.1f;
+  s->m_mat.m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+  s->m_mat.m_rho = 0.1f;
   vf.push_back(static_cast<Figure *>(s));
 
   d = new Disk(vec3(0.0f, 2.0f, -2.0f), vec3(0.0f, -1.0f, 0.0f), 1.0f);
-  d->set_color(1.0f, 1.0f, 0.0f);
-  d->rho = 0.8f;
+  d->m_mat.m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+  d->m_mat.m_rho = 0.8f;
   vf.push_back(static_cast<Figure *>(d));
 
-  l = new Light();
+  l = new DirectionalLight();
   l->m_position = normalize(vec3(1.0f, 1.0f, 1.0f));
   l->m_diffuse = vec3(0.0f, 1.0f, 1.0f);
-  vl.push_back(l);
+  vl.push_back(static_cast<Light *>(l));
 
-  l = new Light();
+  l = new DirectionalLight();
   l->m_position = normalize(vec3(-1.0f, 1.0f, 1.0f));
   l->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-  vl.push_back(l);
+  vl.push_back(static_cast<Light *>(l));
 
-  l = new Light();
+  l = new DirectionalLight();
   l->m_position = normalize(vec3(0.0f, 1.0f, -1.0f));
   l->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
-  vl.push_back(l);
+  vl.push_back(static_cast<Light *>(l));
 }
 
 static void scene_2(vector<Figure *> & vf, vector<Light *> & vl) {
   Sphere * s;
   Plane * p;
-  Light * l;
+  DirectionalLight * l;
 
   p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-  p->set_color(0.0f, 1.0f, 0.0f);
+  //p->set_color(0.0f, 1.0f, 0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   p = new Plane(vec3(-1.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f));
-  p->set_color(1.0f, 0.0f, 0.0f);
+  //p->set_color(1.0f, 0.0f, 0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   p = new Plane(vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f));
-  p->set_color(0.0f, 0.0f, 1.0f);
+  //p->set_color(0.0f, 0.0f, 1.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   p = new Plane(vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f));
-  p->set_color(1.0f, 1.0f, 1.0f);
+  //p->set_color(1.0f, 1.0f, 1.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   p = new Plane(vec3(0.0f, 0.0f, -2.0f), vec3(0.0f, 0.0f, 1.0f));
-  p->set_color(1.0f, 0.0f, 1.0f);
+  //p->set_color(1.0f, 0.0f, 1.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   s = new Sphere(-0.4f, -0.5f, -1.5f, 0.5f);
-  s->set_color(1.0f, 1.0f, 0.0f);
-  s->rho = 0.4f;
+  //s->set_color(1.0f, 1.0f, 0.0f);
+  //s->rho = 0.4f;
   vf.push_back(static_cast<Figure *>(s));
 
-  l = new Light();
+  l = new DirectionalLight();
   l->m_position = normalize(vec3(0.0f, 0.0f, 1.0f));
   l->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
-  vl.push_back(l);
+  vl.push_back(static_cast<Light *>(l));
 }
