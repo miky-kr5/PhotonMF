@@ -29,5 +29,6 @@
 *.app
 ray
 
-# Emacs droppings
+# Others
+*.d
 *~

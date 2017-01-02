@@ -1,30 +1,27 @@
-TARGET = ray
-HEADERS = ray.hpp figure.hpp sphere.hpp plane.hpp disk.hpp material.hpp light.hpp directional_light.hpp point_light.hpp tracer.hpp 
-OBJECTS = main.o sphere.o plane.o disk.o directional_light.o point_light.o tracer.o 
 CXX = g++
-CXXFLAGS = -ansi -pedantic -Wall -g -DGLM_FORCE_RADIANS -fopenmp
+TARGET = ray
+OBJECTS = main.o disk.o plane.o sphere.o directional_light.o point_light.o tracer.o
+DEPENDS = $(OBJECTS:.o=.d)
+CXXFLAGS = -ansi -pedantic -Wall -DGLM_FORCE_RADIANS -fopenmp
 LDLIBS = 
 
 .PHONY: all
+all: CXXFLAGS += -O2 -DNDEBUG
 all: $(TARGET)
 
-$(TARGET): $(OBJECTS) $(HEADERS)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJECTS) $(LDLIBS)
+.PHONY: debug
+debug: CXXFLAGS += -g
+debug: $(TARGET)
 
-main.o: main.cpp $(HEADERS)
+$(TARGET): $(OBJECTS)
+	$(CXX) -o $(TARGET) $(OBJECTS) $(CXXFLAGS) $(LDLIBS)
 
-sphere.o: sphere.cpp $(HEADERS)
+-include $(DEPENDS)
 
-plane.o: plane.cpp $(HEADERS)
-
-disk.o: disk.cpp $(HEADERS)
-
-tracer.o: tracer.cpp $(HEADERS)
-
-directional_light.o: directional_light.cpp $(HEADERS)
-
-point_light.o: point_light.cpp $(HEADERS)
+%.o: %.cpp
+	$(CXX) -c $(CXXFLAGS) $*.cpp -o $*.o
+	$(CXX) -MM $(CXXFLAGS) $*.cpp > $*.d
 
 .PHONY: clean
 clean:
-	$(RM) $(TARGET) $(OBJECTS)
+	$(RM) $(TARGET) $(OBJECTS) $(DEPENDS)
