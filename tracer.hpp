@@ -11,8 +11,9 @@
 #include "ray.hpp"
 
 using std::vector;
-using glm::vec3;
 using glm::vec2;
+using glm::vec3;
+using glm::mat4x4;
 
 class Tracer {
 public:

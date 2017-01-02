@@ -7,6 +7,7 @@
 
 #include <omp.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "ray.hpp"
 #include "figure.hpp"
@@ -29,9 +30,9 @@ static int g_w = 640;
 static int g_h = 480;
 static vec3 ** image;
 
-static void scene_1(vector<Figure *> & vf, vector<Light *> & vl);
-static void scene_2(vector<Figure *> & vf, vector<Light *> & vl);
-static void scene_3(vector<Figure *> & vf, vector<Light *> & vl);
+static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
+static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
+static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
 
 int main(int argc, char ** argv) {
   FILE * out;
@@ -42,6 +43,8 @@ int main(int argc, char ** argv) {
   Tracer tracer;
   int total;
   int current = 0;
+  mat4x4 i_model_view;
+  vec4 dir, orig;
 
   if(argc < 2 || argc > 7) {
     cerr << "USAGE: " << argv[0] << " IN FILE [OUT FILE [HEIGHT WIDTH [SAMPLES [FIELD OF VIEW]]]]" << endl;
@@ -91,18 +94,20 @@ int main(int argc, char ** argv) {
     image[i] = new vec3[g_w];
   }
 
-  scene_3(figures, lights);
+  scene_3(figures, lights, i_model_view);
 
   tracer = Tracer(g_h, g_w, g_fov);
 
   total = g_h * g_w * g_samples;
 
-#pragma omp parallel for schedule(dynamic, 1) private(r, sample) shared(current)
+#pragma omp parallel for schedule(dynamic, 1) private(r, sample, dir, orig) shared(current)
   for (int i = 0; i < g_h; i++) {
     for (int j = 0; j < g_w; j++) {
       for (int k = 0; k < g_samples; k++) {
 	sample = tracer.sample_pixel(i, j);
-	r = Ray(normalize(vec3(sample, -1.0f) - vec3(0.0f, 0.0f, 0.0f)), vec3(0.0f, 0.0f, 0.0f));
+	dir = i_model_view * normalize(vec4(sample, -1.0f, 1.0f) - vec4(0.0f, 0.0f, 0.0f, 1.0f));
+	orig = i_model_view * vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	r = Ray(dir.x, dir.y, dir.z, orig.x, orig.y, orig.z);
 	image[i][j] += tracer.trace_ray(r, figures, lights, 0);
 #pragma omp critical
 	{
@@ -145,7 +150,7 @@ int main(int argc, char ** argv) {
   return EXIT_SUCCESS;
 }
 
-static void scene_1(vector<Figure *> & vf, vector<Light *> & vl) {
+static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
   Sphere * s;
   Plane * p;
   Disk * d;
@@ -220,7 +225,7 @@ static void scene_1(vector<Figure *> & vf, vector<Light *> & vl) {
   vl.push_back(static_cast<Light *>(l));
 }
 
-static void scene_2(vector<Figure *> & vf, vector<Light *> & vl) {
+static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
   Sphere * s;
   Plane * p;
   DirectionalLight * l;
@@ -256,13 +261,19 @@ static void scene_2(vector<Figure *> & vf, vector<Light *> & vl) {
   vl.push_back(static_cast<Light *>(l));
 }
 
-static void scene_3(vector<Figure *> & vf, vector<Light *> & vl) {
+static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
   Sphere * s;
   Plane * p;
   DirectionalLight * l;
+  vec3 eye = vec3(0.0f, 1.5f, 0.0f);
+  vec3 center = vec3(0.0f, 0.0f, -2.0f);
+  vec3 left = vec3(-1.0f, 0.0f, 0.0f);
+  vec3 up = cross(center - eye, left);
 
   s = new Sphere(0.0f, -0.15f, -2.0f, 1.0f);
   s->m_mat.m_diffuse = vec3(1.0f, 0.5f, 0.0f);
+  s->m_mat.m_specular = vec3(0.3f);
+  s->m_mat.m_shininess = 5.0f;
   s->m_mat.m_rho = 0.4f;
   s->m_mat.m_refract = true;
   s->m_mat.m_ref_index = 1.33f;
@@ -283,7 +294,19 @@ static void scene_3(vector<Figure *> & vf, vector<Light *> & vl) {
   vf.push_back(static_cast<Figure *>(p));
 
   l = new DirectionalLight();
-  l->m_position = normalize(vec3(-1.0f, 1.0f, 1.0f));
-  l->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+  l->m_position = normalize(vec3(-1.0f, 1.0f, -1.0f));
+  l->m_diffuse = vec3(0.0f, 1.0f, 0.0f);
   vl.push_back(static_cast<Light *>(l));
+
+  l = new DirectionalLight();
+  l->m_position = normalize(vec3(0.0f, 1.0f, 1.0f));
+  l->m_diffuse = vec3(1.0f, 0.0f, 0.0f);
+  vl.push_back(static_cast<Light *>(l));
+
+  l = new DirectionalLight();
+  l->m_position = normalize(vec3(1.0f, 1.0f, -1.0f));
+  l->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
+  vl.push_back(static_cast<Light *>(l));
+
+  i_model_view = inverse(lookAt(eye, center, up));
 }

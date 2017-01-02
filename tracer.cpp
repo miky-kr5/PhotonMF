@@ -57,13 +57,13 @@ vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *> & 
   float t, _t;
   Figure * _f;
   vec3 n, color, i_pos, ref;
-  Ray sr, rr;
+  Ray mv_r, sr, rr;
   bool vis;
   float kr;
 
   t = numeric_limits<float>::max();
   _f = NULL;
-  
+
   for (size_t f = 0; f < v_figures.size(); f++) {
     if (v_figures[f]->intersect(r, _t) && _t < t) {
       t = _t;
