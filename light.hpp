@@ -14,11 +14,12 @@ public:
   vec3 m_position;
   vec3 m_diffuse;
   vec3 m_specular;
-  vec3 m_ambient;
 
   virtual ~Light() { }
 
-  virtual vec3 shade(vec3 normal, Ray & r, Material & m) const = 0;
+  virtual vec3 direction(vec3 point) = 0;
+  virtual float distance(vec3 point) = 0;
+  virtual vec3 shade(vec3 normal, Ray & r, float t, Material & m) const = 0;
 };
 
 #endif

@@ -1,15 +1,26 @@
+#include <limits>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
 #include "directional_light.hpp"
 
+using std::numeric_limits;
 using glm::pi;
 using glm::reflect;
 using glm::dot;
 using glm::pow;
 using glm::max;
 
-vec3 DirectionalLight::shade(vec3 normal, Ray & r, Material & m) const {
+inline vec3 DirectionalLight::direction(vec3 point) {
+  return m_position;
+}
+
+inline float DirectionalLight::distance(vec3 point) {
+  return numeric_limits<float>::max();
+}
+
+vec3 DirectionalLight::shade(vec3 normal, Ray & r, float t, Material & m) const {
   float n_dot_l, r_dot_l;
   vec3 color, ref;
 

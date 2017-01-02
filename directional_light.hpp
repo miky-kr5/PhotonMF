@@ -18,7 +18,9 @@ public:
     m_specular = _s;
   }
 
-  virtual vec3 shade(vec3 normal, Ray & r, Material & m) const;
+  virtual vec3 direction(vec3 point);
+  virtual float distance(vec3 point);
+  virtual vec3 shade(vec3 normal, Ray & r, float t, Material & m) const;
 };
 
 #endif

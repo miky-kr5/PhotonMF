@@ -77,16 +77,16 @@ vec3 Tracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *> & 
 
     for (size_t l = 0; l < v_lights.size(); l++) {
       vis = true;
-      sr = Ray(v_lights[l]->m_position, i_pos + n * BIAS);
+      sr = Ray(v_lights[l]->direction(i_pos), i_pos + n * BIAS);
 
       for (size_t f = 0; f < v_figures.size(); f++) {
-	if (v_figures[f]->intersect(sr, _t)) {
+	if (v_figures[f]->intersect(sr, _t) && _t < v_lights[l]->distance(i_pos)) {
 	  vis = false;
 	  break;
 	}
       }
 
-      color += (vis ? 1.0f : 0.0f) * v_lights[l]->shade(n, r, _f->m_mat);
+      color += (vis ? 1.0f : 0.0f) * v_lights[l]->shade(n, r, t, _f->m_mat);
     }
 
     if (_f->m_mat.m_refract)

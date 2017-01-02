@@ -16,6 +16,7 @@
 #include "disk.hpp"
 #include "light.hpp"
 #include "directional_light.hpp"
+#include "point_light.hpp"
 #include "tracer.hpp"
 
 using namespace std;
@@ -94,7 +95,7 @@ int main(int argc, char ** argv) {
     image[i] = new vec3[g_w];
   }
 
-  scene_3(figures, lights, i_model_view);
+  scene_2(figures, lights, i_model_view);
 
   tracer = Tracer(g_h, g_w, g_fov);
 
@@ -228,17 +229,25 @@ static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
 static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
   Sphere * s;
   Plane * p;
-  DirectionalLight * l;
+  PointLight * l;
+
+  s = new Sphere(0.2f, 0.0f, -0.75f, 0.25f);
+  s->m_mat.m_diffuse = vec3(0.0f);
+  s->m_mat.m_specular = vec3(0.0f);
+  s->m_mat.m_rho = 0.1f;
+  s->m_mat.m_refract = true;
+  s->m_mat.m_ref_index = 2.33f;
+  vf.push_back(static_cast<Figure *>(s));
 
   p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
   p->m_mat.m_diffuse = vec3(0.0f, 1.0f, 0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
-  p = new Plane(vec3(-1.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f));
+  p = new Plane(vec3(-2.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f));
   p->m_mat.m_diffuse = vec3(1.0f, 0.0f, 0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
-  p = new Plane(vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f));
+  p = new Plane(vec3(2.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f));
   p->m_mat.m_diffuse = vec3(0.0f, 0.0f, 1.0f);
   vf.push_back(static_cast<Figure *>(p));
 
@@ -250,14 +259,18 @@ static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   p->m_mat.m_diffuse = vec3(1.0f, 0.0f, 1.0f);
   vf.push_back(static_cast<Figure *>(p));
 
+  p = new Plane(vec3(0.0f, 0.0f, 0.1f), vec3(0.0f, 0.0f, -1.0f));
+  p->m_mat.m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+  vf.push_back(static_cast<Figure *>(p));
+
   s = new Sphere(-0.4f, -0.5f, -1.5f, 0.5f);
   s->m_mat.m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-  s->m_mat.m_rho = 0.4f;
+  s->m_mat.m_rho = 0.9f;
   vf.push_back(static_cast<Figure *>(s));
 
-  l = new DirectionalLight();
-  l->m_position = normalize(vec3(0.0f, 0.0f, 1.0f));
-  l->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+  l = new PointLight();
+  l->m_position = vec3(0.0f, 0.9f, -1.0f);
+  l->m_diffuse = vec3(1.0f);
   vl.push_back(static_cast<Light *>(l));
 }
 
@@ -279,6 +292,14 @@ static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   s->m_mat.m_ref_index = 1.33f;
   vf.push_back(static_cast<Figure *>(s));
 
+  s = new Sphere(0.0f, -0.15f, -2.0f, 0.5f);
+  s->m_mat.m_diffuse = vec3(0.0f);
+  s->m_mat.m_specular = vec3(0.0f);
+  s->m_mat.m_rho = 0.0f;
+  s->m_mat.m_refract = true;
+  s->m_mat.m_ref_index = 2.6f;
+  vf.push_back(static_cast<Figure *>(s));
+
   s = new Sphere(2.0f, 0.0f, -2.0f, 1.0f);
   s->m_mat.m_diffuse = vec3(1.0f, 0.0f, 1.0f);
   s->m_mat.m_rho = 0.6f;
@@ -286,6 +307,7 @@ static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
 
   s = new Sphere(-1.0f, 0.25f, -3.25f, 1.0f);
   s->m_mat.m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+  s->m_mat.m_shininess = 20.0f;
   vf.push_back(static_cast<Figure *>(s));
 
   p = new Plane(vec3(0.0f, -1.5f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
@@ -296,16 +318,24 @@ static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   l = new DirectionalLight();
   l->m_position = normalize(vec3(-1.0f, 1.0f, -1.0f));
   l->m_diffuse = vec3(0.0f, 1.0f, 0.0f);
+  l->m_specular = vec3(0.0f, 1.0f, 0.0f);
   vl.push_back(static_cast<Light *>(l));
 
   l = new DirectionalLight();
   l->m_position = normalize(vec3(0.0f, 1.0f, 1.0f));
   l->m_diffuse = vec3(1.0f, 0.0f, 0.0f);
+  l->m_specular = vec3(1.0f, 0.0f, 0.0f);
   vl.push_back(static_cast<Light *>(l));
 
   l = new DirectionalLight();
   l->m_position = normalize(vec3(1.0f, 1.0f, -1.0f));
   l->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
+  l->m_specular = vec3(0.0f, 0.0f, 1.0f);
+  vl.push_back(static_cast<Light *>(l));
+
+  l = new DirectionalLight();
+  l->m_position = normalize(vec3(0.0f, 1.0f, 0.0f));
+  l->m_diffuse = vec3(0.5f);
   vl.push_back(static_cast<Light *>(l));
 
   i_model_view = inverse(lookAt(eye, center, up));
