@@ -16,10 +16,6 @@ public:
   vec3 m_specular;
   vec3 m_ambient;
 
-  float max(float a, float b) const {
-    return a >= b ? a : b;
-  }
-
   virtual ~Light() { }
 
   virtual vec3 shade(vec3 normal, Ray & r, Material & m) const = 0;

@@ -17,7 +17,7 @@ using glm::reflect;
 using glm::refract;
 using glm::clamp;
 using glm::tan;
-using glm::cos;
+using glm::sqrt;
 
 static const vec3 BCKG_COLOR = vec3(0.16f, 0.66f, 0.72f);
 

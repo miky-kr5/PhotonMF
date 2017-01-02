@@ -3,7 +3,7 @@ HEADERS = ray.hpp figure.hpp sphere.hpp plane.hpp disk.hpp material.hpp light.hp
 OBJECTS = main.o sphere.o plane.o disk.o directional_light.o tracer.o 
 CXX = g++
 CXXFLAGS = -ansi -pedantic -Wall -g -DGLM_FORCE_RADIANS -fopenmp
-LDLIBS = -lm
+LDLIBS = 
 
 .PHONY: all
 all: $(TARGET)
