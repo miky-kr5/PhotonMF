@@ -13,8 +13,6 @@ vec3 DirectionalLight::shade(vec3 normal, Ray & r, Material & m) const {
   float n_dot_l, r_dot_l;
   vec3 color, ref;
 
-  //color = m.m_ambient * m_ambient;
-
   n_dot_l = max(dot(normal, m_position), 0.0);
   color += (m.m_diffuse / pi<float>()) * m_diffuse * n_dot_l;
 
