@@ -1,0 +1,29 @@
+* Features [7/19]
+
+ - [X] Perspective projection
+ - [X] Ray-sphere intersection
+ - [-] Ray-plane and derived intersections
+   - [X] Ray-plane
+   - [X] Ray-disk
+   - [ ] Ray-triangle
+   - [ ] Ray-box
+ - [ ] Ray-mesh intersection
+ - [ ] Octree mesh
+ - [X] Directional lights
+ - [X] Point lights
+ - [ ] Spotlights
+ - [ ] Area lights
+   - [ ] Sphere lights
+   - [ ] Box/planar lights
+   - [ ] Mesh lights
+ - [X] Phong shading
+ - [X] Specular reflections
+ - [X] Transmission
+ - [ ] Scene description input files (JSON)
+ - [ ] Indirect illumination
+ - [ ] Russian roulette
+ - [ ] Image based lightning
+ - [ ] HDR light probes for IBL
+ - [ ] Tone mapping
+ - [ ] Texture mapping
+ - [ ] Photon mapping
