@@ -14,8 +14,10 @@ public:
   float m_shininess;
   float m_ref_index;
   bool m_refract;
+  float kd;
+  float ks;
 
-  Material(): m_diffuse(vec3(1.0f)), m_specular(vec3(1.0f)), m_rho(0.0f), m_shininess(89.0f), m_ref_index(1.0f), m_refract(false) { }
+  Material(): m_diffuse(vec3(1.0f)), m_specular(vec3(1.0f)), m_rho(0.0f), m_shininess(89.0f), m_ref_index(1.0f), m_refract(false), kd(0.4f), ks(0.4f) { }
 
   Material(const Material & m) {
     m_diffuse = m.m_diffuse;

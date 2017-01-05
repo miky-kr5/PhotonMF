@@ -1,4 +1,4 @@
-* Features [7/19]
+* Features [8/20]
 
  - [X] Perspective projection
  - [X] Ray-sphere intersection
@@ -20,7 +20,7 @@
  - [X] Specular reflections
  - [X] Transmission
  - [ ] Scene description input files (JSON)
- - [ ] Indirect illumination
+ - [X] Indirect illumination
  - [ ] Russian roulette
  - [ ] Image based lightning
  - [ ] HDR light probes for IBL

@@ -20,7 +20,8 @@ public:
 
   virtual vec3 direction(vec3 point);
   virtual float distance(vec3 point);
-  virtual vec3 shade(vec3 normal, Ray & r, float t, Material & m) const;
+  virtual vec3 diffuse(vec3 normal, Ray & r, float t, Material & m) const;
+  virtual vec3 specular(vec3 normal, Ray & r, float t, Material & m) const;
 };
 
 #endif

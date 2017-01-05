@@ -97,7 +97,7 @@ int main(int argc, char ** argv) {
 
   scene_2(figures, lights, i_model_view);
 
-  tracer = Tracer(g_h, g_w, g_fov);
+  tracer = Tracer(g_h, g_w, g_fov, true);
 
   total = g_h * g_w * g_samples;
 
@@ -137,9 +137,9 @@ int main(int argc, char ** argv) {
   fprintf(out, "P6 %d %d %d ", g_w, g_h, 255);
   for (int i = 0; i < g_h; i++) {
     for (int j = 0; j < g_w; j++) {
-      fputc(static_cast<int>(image[i][j].r * 255.0f), out);
-      fputc(static_cast<int>(image[i][j].g * 255.0f), out);
-      fputc(static_cast<int>(image[i][j].b * 255.0f), out);
+      fputc(static_cast<int>(pow(image[i][j].r, 1.0f / 2.2f) * 255.0f), out);
+      fputc(static_cast<int>(pow(image[i][j].g, 1.0f / 2.2f) * 255.0f), out);
+      fputc(static_cast<int>(pow(image[i][j].b, 1.0f / 2.2f) * 255.0f), out);
     }
   }
   fclose(out);
@@ -229,14 +229,11 @@ static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
 static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
   Sphere * s;
   Plane * p;
+  Disk * d;
   PointLight * l;
 
   s = new Sphere(0.2f, 0.0f, -0.75f, 0.25f);
-  s->m_mat.m_diffuse = vec3(0.0f);
-  s->m_mat.m_specular = vec3(0.0f);
-  s->m_mat.m_rho = 0.1f;
-  s->m_mat.m_refract = true;
-  s->m_mat.m_ref_index = 2.33f;
+  s->m_mat.m_diffuse = vec3(1.0f);
   vf.push_back(static_cast<Figure *>(s));
 
   p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
@@ -259,14 +256,37 @@ static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   p->m_mat.m_diffuse = vec3(1.0f, 0.0f, 1.0f);
   vf.push_back(static_cast<Figure *>(p));
 
-  p = new Plane(vec3(0.0f, 0.0f, 0.1f), vec3(0.0f, 0.0f, -1.0f));
+  p = new Plane(vec3(0.0f, 0.0f, 1.1f), vec3(0.0f, 0.0f, -1.0f));
   p->m_mat.m_diffuse = vec3(1.0f, 1.0f, 1.0f);
   vf.push_back(static_cast<Figure *>(p));
 
-  s = new Sphere(-0.4f, -0.5f, -1.5f, 0.5f);
+  s = new Sphere(-0.5f, -0.5f, -1.5f, 0.5f);
   s->m_mat.m_diffuse = vec3(1.0f, 1.0f, 0.0f);
   s->m_mat.m_rho = 0.9f;
   vf.push_back(static_cast<Figure *>(s));
+
+  s = new Sphere(-0.5f, -0.5f, 0.6f, 0.5f);
+  s->m_mat.m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+  s->m_mat.m_rho = 0.1f;
+  s->m_mat.m_refract = true;
+  s->m_mat.m_ref_index = 1.33f;
+  vf.push_back(static_cast<Figure *>(s));
+
+  d = new Disk(vec3(-0.25f, 1.0f, -1.0f), vec3(1.0f, 0.0f, 0.0f), 0.25f);
+  d->m_mat.m_diffuse = vec3(1.0f);
+  vf.push_back(static_cast<Figure *>(d));
+
+  d = new Disk(vec3(0.25f, 1.0f, -1.0f), vec3(-1.0f, 0.0f, 0.0f), 0.25f);
+  d->m_mat.m_diffuse = vec3(1.0f);
+  vf.push_back(static_cast<Figure *>(d));
+
+  d = new Disk(vec3(0.0f, 1.0f, -1.25f), vec3(0.0f, 0.0f, 1.0f), 0.25f);
+  d->m_mat.m_diffuse = vec3(1.0f);
+  vf.push_back(static_cast<Figure *>(d));
+
+  d = new Disk(vec3(0.0f, 1.0f, -0.75f), vec3(0.0f, 0.0f, -1.0f), 0.25f);
+  d->m_mat.m_diffuse = vec3(1.0f);
+  vf.push_back(static_cast<Figure *>(d));
 
   l = new PointLight();
   l->m_position = vec3(0.0f, 0.9f, -1.0f);
@@ -302,7 +322,7 @@ static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
 
   s = new Sphere(2.0f, 0.0f, -2.0f, 1.0f);
   s->m_mat.m_diffuse = vec3(1.0f, 0.0f, 1.0f);
-  s->m_mat.m_rho = 0.6f;
+  s->m_mat.m_rho = 1.0f;
   vf.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(-1.0f, 0.25f, -3.25f, 1.0f);
@@ -311,13 +331,13 @@ static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   vf.push_back(static_cast<Figure *>(s));
 
   p = new Plane(vec3(0.0f, -1.5f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-  p->m_mat.m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+  p->m_mat.m_diffuse = vec3(1.0f);
   p->m_mat.m_specular = vec3(0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   l = new DirectionalLight();
   l->m_position = normalize(vec3(-1.0f, 1.0f, -1.0f));
-  l->m_diffuse = vec3(0.0f, 1.0f, 0.0f);
+  l->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
   l->m_specular = vec3(0.0f, 1.0f, 0.0f);
   vl.push_back(static_cast<Light *>(l));
 
@@ -334,7 +354,7 @@ static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   vl.push_back(static_cast<Light *>(l));
 
   l = new DirectionalLight();
-  l->m_position = normalize(vec3(0.0f, 1.0f, 0.0f));
+  l->m_position = normalize(vec3(1.0f, 0.0f, 1.0f));
   l->m_diffuse = vec3(0.5f);
   vl.push_back(static_cast<Light *>(l));
 
