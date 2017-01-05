@@ -18,6 +18,7 @@
 #include "directional_light.hpp"
 #include "point_light.hpp"
 #include "tracer.hpp"
+#include "path_tracer.hpp"
 
 using namespace std;
 using namespace glm;
@@ -41,9 +42,9 @@ int main(int argc, char ** argv) {
   vec2 sample;
   vector<Figure *> figures;
   vector<Light *> lights;
-  Tracer tracer;
-  int total;
-  int current = 0;
+  Tracer * tracer;
+  size_t total;
+  size_t current = 0;
   mat4x4 i_model_view;
   vec4 dir, orig;
 
@@ -97,7 +98,7 @@ int main(int argc, char ** argv) {
 
   scene_2(figures, lights, i_model_view);
 
-  tracer = Tracer(g_h, g_w, g_fov, true);
+  tracer = static_cast<Tracer *>(new PathTracer(g_h, g_w, g_fov, true));
 
   total = g_h * g_w * g_samples;
 
@@ -105,11 +106,11 @@ int main(int argc, char ** argv) {
   for (int i = 0; i < g_h; i++) {
     for (int j = 0; j < g_w; j++) {
       for (int k = 0; k < g_samples; k++) {
-	sample = tracer.sample_pixel(i, j);
+	sample = tracer->sample_pixel(i, j);
 	dir = i_model_view * normalize(vec4(sample, -1.0f, 1.0f) - vec4(0.0f, 0.0f, 0.0f, 1.0f));
 	orig = i_model_view * vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	r = Ray(dir.x, dir.y, dir.z, orig.x, orig.y, orig.z);
-	image[i][j] += tracer.trace_ray(r, figures, lights, 0);
+	image[i][j] += tracer->trace_ray(r, figures, lights, 0);
 #pragma omp critical
 	{
 	  current++;
@@ -119,10 +120,12 @@ int main(int argc, char ** argv) {
     }
 #pragma omp critical
     {
-      cout << "\r" << setw(3) << static_cast<int>((static_cast<float>(current) / static_cast<float>(total)) * 100.0f) << "% done";
+      cout << "\r" << setw(3) << static_cast<size_t>((static_cast<double>(current) / static_cast<double>(total)) * 100.0) << "% done";
     }
   }
   cout << endl;
+
+  delete tracer;
 
   for (size_t i = 0; i < figures.size(); i++) {
     delete figures[i];
