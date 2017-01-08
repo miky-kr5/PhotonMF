@@ -9,6 +9,8 @@ using namespace glm;
 
 PathTracer::~PathTracer() { }
 
+static const float PDF = (1.0f / (2.0f * pi<float>()));
+
 vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *> & v_lights, unsigned int rec_level) const {
   float t, _t;
   Figure * _f;
@@ -35,7 +37,7 @@ vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *
     n = _f->normal_at_int(r, t);
 
     // Check if the material is not reflective/refractive.
-    if( !_f->m_mat.m_refract && _f->m_mat.m_rho == 0.0f) {
+    if( !_f->m_mat.m_refract) {
       // Calculate the direct lighting.
       for (size_t l = 0; l < v_lights.size(); l++) {
 	// For every light source
@@ -62,30 +64,33 @@ vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *
 	sample = sample_hemisphere(r1, r2);
 	rotate_sample(sample, n);
 	rr = Ray(normalize(sample), i_pos + (sample * BIAS));
-	ind_color += r1 * trace_ray(rr, v_figures, v_lights, rec_level + 1) / (1.0f / (2.0f * pi<float>()));
+	ind_color += r1 * trace_ray(rr, v_figures, v_lights, rec_level + 1) / PDF;
       }
 
       color += ((dir_diff_color + ind_color) * (_f->m_mat.m_diffuse / pi<float>())) + dir_spec_color;
 
-    } else {
-      // If the material has reflection/transmission enabled.
-      // Calculate the Fresnel term if the surface is refracting.
-      if (_f->m_mat.m_refract)
-	kr = fresnel(r.m_direction, n, r.m_ref_index, _f->m_mat.m_ref_index);
-      else
-	kr = _f->m_mat.m_rho;
+      // Determine the specular reflection color.
+      if (_f->m_mat.m_rho > 0.0f && rec_level < MAX_RECURSION) {
+	rr = Ray(normalize(reflect(r.m_direction, n)), i_pos + n * BIAS);
+	color += _f->m_mat.m_rho * trace_ray(rr, v_figures, v_lights, rec_level + 1);
+      } else if (_f->m_mat.m_rho > 0.0f && rec_level >= MAX_RECURSION)
+	return vec3(0.0f);
 
-      // Determinte the specular reflection color.
+    } else {
+      // If the material has transmission enabled, calculate the Fresnel term.
+      kr = fresnel(r.m_direction, n, r.m_ref_index, _f->m_mat.m_ref_index);
+
+      // Determine the specular reflection color.
       if (kr > 0.0f && rec_level < MAX_RECURSION) {
 	rr = Ray(normalize(reflect(r.m_direction, n)), i_pos + n * BIAS);
-	color += _f->m_mat.m_rho * kr * trace_ray(rr, v_figures, v_lights, rec_level + 1);
+	color += kr * trace_ray(rr, v_figures, v_lights, rec_level + 1);
       } else if (rec_level >= MAX_RECURSION)
 	return vec3(0.0f);
 
       // Determine the transmission color.
       if (_f->m_mat.m_refract && kr < 1.0f && rec_level < MAX_RECURSION) {
 	rr = Ray(normalize(refract(r.m_direction, n, r.m_ref_index / _f->m_mat.m_ref_index)), i_pos - n * BIAS, _f->m_mat.m_ref_index);
-	color += (1.0f - _f->m_mat.m_rho) * (1.0f - kr) * trace_ray(rr, v_figures, v_lights, rec_level + 1);
+	color += (1.0f - kr) * trace_ray(rr, v_figures, v_lights, rec_level + 1);
       } else if (rec_level >= MAX_RECURSION)
 	return vec3(0.0f);
 

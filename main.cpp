@@ -264,8 +264,8 @@ static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   vf.push_back(static_cast<Figure *>(p));
 
   s = new Sphere(-0.5f, -0.5f, -1.5f, 0.5f);
-  s->m_mat.m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-  s->m_mat.m_rho = 0.9f;
+  s->m_mat.m_diffuse = vec3(1.0f);
+  s->m_mat.m_rho = 0.4f;
   vf.push_back(static_cast<Figure *>(s));
 
   s = new Sphere(-0.5f, -0.5f, 0.6f, 0.5f);
