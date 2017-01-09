@@ -35,6 +35,7 @@ static vec3 ** image;
 static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
 static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
 static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
+static void scene_4(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
 
 int main(int argc, char ** argv) {
   FILE * out;
@@ -362,4 +363,18 @@ static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   vl.push_back(static_cast<Light *>(l));
 
   i_model_view = inverse(lookAt(eye, center, up));
+}
+
+static void scene_4(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
+  Sphere * s;
+  Plane * p;
+
+  s = new Sphere(0.0f, 0.0f, -2.0f, 1.0f);
+  s->m_mat.m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+  vf.push_back(static_cast<Figure *>(s));
+
+  p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
+  p->m_mat.m_diffuse = vec3(1.0f);
+  p->m_mat.m_specular = vec3(0.0f);
+  vf.push_back(static_cast<Figure *>(p));
 }

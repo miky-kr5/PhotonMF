@@ -1,7 +1,6 @@
 #include "sphere.hpp"
 
-using glm::normalize;
-using glm::sqrt;
+using namespace glm;
 
 bool Sphere::intersect(Ray & r, float & t) const {
   float t1, t2;

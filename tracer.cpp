@@ -6,7 +6,7 @@
 
 using namespace glm;
 
-const vec3 BCKG_COLOR = vec3(0.0f, 0.2f, 0.6f);
+const vec3 BCKG_COLOR = vec3(1.0f);
 
 float Tracer::random01() const {
   return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
