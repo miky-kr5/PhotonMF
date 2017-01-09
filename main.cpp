@@ -253,7 +253,7 @@ static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   vf.push_back(static_cast<Figure *>(p));
 
   p = new Plane(vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f));
-  p->m_mat.m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+  p->m_mat.m_diffuse = vec3(0.0f, 1.0f, 1.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   p = new Plane(vec3(0.0f, 0.0f, -2.0f), vec3(0.0f, 0.0f, 1.0f));
@@ -261,7 +261,7 @@ static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   vf.push_back(static_cast<Figure *>(p));
 
   p = new Plane(vec3(0.0f, 0.0f, 1.1f), vec3(0.0f, 0.0f, -1.0f));
-  p->m_mat.m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+  p->m_mat.m_diffuse = vec3(1.0f, 1.0f, 0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   s = new Sphere(-0.5f, -0.5f, -1.5f, 0.5f);
