@@ -27,7 +27,7 @@ static const char * OUT_FILE = "output.ppm";
 
 static char * input_file;
 static int g_samples = 25;
-static float g_fov = 90.0f;
+static float g_fov = 45.f;
 static int g_w = 640;
 static int g_h = 480;
 static vec3 ** image;
@@ -108,7 +108,7 @@ int main(int argc, char ** argv) {
     for (int j = 0; j < g_w; j++) {
       for (int k = 0; k < g_samples; k++) {
 	sample = tracer->sample_pixel(i, j);
-	dir = i_model_view * normalize(vec4(sample, -1.0f, 1.0f) - vec4(0.0f, 0.0f, 0.0f, 1.0f));
+	dir = i_model_view * normalize(vec4(sample, -0.5f, 1.0f) - vec4(0.0f, 0.0f, 0.0f, 1.0f));
 	orig = i_model_view * vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	r = Ray(dir.x, dir.y, dir.z, orig.x, orig.y, orig.z);
 	image[i][j] += tracer->trace_ray(r, figures, lights, 0);
