@@ -53,8 +53,8 @@ vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *
 	}
 
 	// Evaluate the shading model accounting for visibility.
-	dir_diff_color += vis ? v_lights[l]->diffuse(n, r, t, _f->m_mat) : vec3(0.0f);
-	dir_spec_color += vis ? v_lights[l]->specular(n, r, t, _f->m_mat) : vec3(0.0f);
+	dir_diff_color += vis ? v_lights[l]->diffuse(n, r, i_pos, _f->m_mat) : vec3(0.0f);
+	dir_spec_color += vis ? v_lights[l]->specular(n, r, i_pos, _f->m_mat) : vec3(0.0f);
       }
 
       // Calculate indirect lighting contribution.

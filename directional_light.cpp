@@ -20,23 +20,10 @@ inline float DirectionalLight::distance(vec3 point) {
   return numeric_limits<float>::max();
 }
 
-vec3 DirectionalLight::diffuse(vec3 normal, Ray & r, float t, Material & m) const {
-  float n_dot_l;
-  vec3 color;
-
-  n_dot_l = max(dot(normal, m_position), 0.0f);
-  color += m_diffuse * n_dot_l;
-
-  return color;
+vec3 DirectionalLight::diffuse(vec3 normal, Ray & r, vec3 i_pos, Material & m) const {
+  return m_brdf->diffuse(m_position, normal, r, m_diffuse);
 }
 
-vec3 DirectionalLight::specular(vec3 normal, Ray & r, float t, Material & m) const {
-  float r_dot_l;
-  vec3 color, ref;
-
-  ref = reflect(m_position, normal);
-  r_dot_l = pow(max(dot(ref, r.m_direction), 0.0f), m.m_shininess);
-  color += m.m_specular * m_specular * r_dot_l;
-
-  return color;
+vec3 DirectionalLight::specular(vec3 normal, Ray & r, vec3 i_pos, Material & m) const {
+  return m.m_specular * m_brdf->specular(m_position, normal, r, m_specular, m.m_shininess);
 }

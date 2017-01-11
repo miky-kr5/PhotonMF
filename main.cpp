@@ -20,6 +20,8 @@
 #include "point_light.hpp"
 #include "tracer.hpp"
 #include "path_tracer.hpp"
+#include "brdf.hpp"
+#include "phong_brdf.hpp"
 
 using namespace std;
 using namespace glm;

@@ -19,35 +19,26 @@ inline float PointLight::distance(vec3 point) {
   return length(m_position - point);
 }
 
-vec3 PointLight::diffuse(vec3 normal, Ray & r, float t, Material & m) const {
-  float d, att, n_dot_l;
-  vec3 color, i_pos, l_dir, ref;
+vec3 PointLight::diffuse(vec3 normal, Ray & r, vec3 i_pos, Material & m) const {
+  float d, att;
+  vec3 l_dir, ref;
 
-  i_pos = r.m_origin + t * r.m_direction;
   l_dir = m_position - i_pos;
   d = length(l_dir);
   l_dir = normalize(l_dir);
   att = 1.0f / (m_const_att + (m_lin_att * d) + (m_quad_att * (d * d)));
 
-  n_dot_l = max(dot(normal, l_dir), 0.0f);
-  color += att * m_diffuse * n_dot_l;
-
-  return color;
+  return att * m_brdf->diffuse(l_dir, normal, r, m_diffuse);
 }
 
-vec3 PointLight::specular(vec3 normal, Ray & r, float t, Material & m) const {
-  float d, att, r_dot_l;
-  vec3 color, i_pos, l_dir, ref;
+vec3 PointLight::specular(vec3 normal, Ray & r, vec3 i_pos, Material & m) const {
+  float d, att;
+  vec3 l_dir, ref;
 
-  i_pos = r.m_origin + t * r.m_direction;
   l_dir = m_position - i_pos;
   d = length(l_dir);
   l_dir = normalize(l_dir);
   att = 1.0f / (m_const_att + (m_lin_att * d) + (m_quad_att * (d * d)));
 
-  ref = reflect(l_dir, normal);
-  r_dot_l = pow(max(dot(ref, r.m_direction), 0.0f), m.m_shininess);
-  color += att * m.m_specular * m_specular * r_dot_l; 
-
-  return color;
+  return att * m.m_specular * m_brdf->specular(l_dir, normal, r, m_specular, m.m_shininess);
 }
