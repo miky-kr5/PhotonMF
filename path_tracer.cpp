@@ -37,7 +37,7 @@ vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *
     n = _f->normal_at_int(r, t);
     
     // Check if the material is not reflective/refractive.
-    if( !_f->m_mat.m_refract) {
+    if (!_f->m_mat.m_refract) {
       // Calculate the direct lighting.
       for (size_t l = 0; l < v_lights.size(); l++) {
 	// For every light source
@@ -88,7 +88,7 @@ vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *
 	amb_color = vis ? BCKG_COLOR * max(dot(n, rr.m_direction), 0.0f) / PDF : vec3(0.0f);
       }
       
-      color += ((dir_diff_color + ind_color + amb_color) * (_f->m_mat.m_diffuse / pi<float>())) + dir_spec_color;
+      color += ((dir_diff_color + ind_color + amb_color) * (_f->m_mat.m_diffuse / pi<float>())) + (_f->m_mat.m_diffuse * dir_spec_color);
 
       // Determine the specular reflection color.
       if (_f->m_mat.m_rho > 0.0f && rec_level < MAX_RECURSION) {

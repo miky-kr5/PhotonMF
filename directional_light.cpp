@@ -25,5 +25,5 @@ vec3 DirectionalLight::diffuse(vec3 normal, Ray & r, vec3 i_pos, Material & m) c
 }
 
 vec3 DirectionalLight::specular(vec3 normal, Ray & r, vec3 i_pos, Material & m) const {
-  return m.m_specular * m_brdf->specular(m_position, normal, r, m_specular, m.m_shininess);
+  return m_brdf->specular(m_position, normal, r, m_specular, m.m_shininess);
 }
