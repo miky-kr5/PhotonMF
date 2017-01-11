@@ -134,9 +134,9 @@ int main(int argc, char ** argv) {
   for (unsigned int y = 0; y < FreeImage_GetHeight(output_bitmap); y++) {
     bits = FreeImage_GetScanLine(output_bitmap, y);
     for (unsigned int x = 0; x < FreeImage_GetWidth(output_bitmap); x++) {
-      bits[FI_RGBA_RED] = static_cast<unsigned char>(pow(image[g_h - 1 - y][x].r, 1.0f / 2.2f) * 255.0f);
-      bits[FI_RGBA_GREEN] = static_cast<unsigned char>(pow(image[g_h - 1 - y][x].g, 1.0f / 2.2f) * 255.0f);
-      bits[FI_RGBA_BLUE] = static_cast<unsigned char>(pow(image[g_h - 1 - y][x].b, 1.0f / 2.2f) * 255.0f);
+      bits[FI_RGBA_RED] = static_cast<BYTE>(pow(image[g_h - 1 - y][x].r, 1.0f / 2.2f) * 255.0f);
+      bits[FI_RGBA_GREEN] = static_cast<BYTE>(pow(image[g_h - 1 - y][x].g, 1.0f / 2.2f) * 255.0f);
+      bits[FI_RGBA_BLUE] = static_cast<BYTE>(pow(image[g_h - 1 - y][x].b, 1.0f / 2.2f) * 255.0f);
       bits += bpp;
     }
   }
