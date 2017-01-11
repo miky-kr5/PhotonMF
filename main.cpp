@@ -8,6 +8,7 @@
 #include <omp.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <FreeImage.h>
 
 #include "ray.hpp"
 #include "figure.hpp"
@@ -23,7 +24,7 @@
 using namespace std;
 using namespace glm;
 
-static const char * OUT_FILE = "output.ppm";
+static const char * OUT_FILE = "output.png";
 
 static char * input_file;
 static int g_samples = 25;
@@ -38,7 +39,6 @@ static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
 static void scene_4(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
 
 int main(int argc, char ** argv) {
-  FILE * out;
   Ray r;
   vec2 sample;
   vector<Figure *> figures;
@@ -48,7 +48,12 @@ int main(int argc, char ** argv) {
   size_t current = 0;
   mat4x4 i_model_view;
   vec4 dir, orig;
+  FIBITMAP * output_bitmap;
+  FREE_IMAGE_FORMAT fif;
+  BYTE * bits;
+  int bpp;
 
+  // Check command line arguments.
   if(argc < 2 || argc > 7) {
     cerr << "USAGE: " << argv[0] << " IN FILE [OUT FILE [HEIGHT WIDTH [SAMPLES [FIELD OF VIEW]]]]" << endl;
     return EXIT_FAILURE;
@@ -90,19 +95,18 @@ int main(int argc, char ** argv) {
     }
   }
 
-  out = fopen(argc >= 3 ? argv[2] : OUT_FILE, "wb");
+  FreeImage_Initialise();
 
+  // Create the image, scene and tracer.
   image = new vec3*[g_h];
   for (int i = 0; i < g_h; i++) {
     image[i] = new vec3[g_w];
   }
-
   scene_2(figures, lights, i_model_view);
+  tracer = static_cast<Tracer *>(new PathTracer(g_h, g_w, g_fov));
 
-  tracer = static_cast<Tracer *>(new PathTracer(g_h, g_w, g_fov, true));
-
+  // Generate the image.
   total = g_h * g_w * g_samples;
-
 #pragma omp parallel for schedule(dynamic, 1) private(r, sample, dir, orig) shared(current)
   for (int i = 0; i < g_h; i++) {
     for (int j = 0; j < g_w; j++) {
@@ -112,20 +116,35 @@ int main(int argc, char ** argv) {
 	orig = i_model_view * vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	r = Ray(dir.x, dir.y, dir.z, orig.x, orig.y, orig.z);
 	image[i][j] += tracer->trace_ray(r, figures, lights, 0);
-#pragma omp critical
-	{
-	  current++;
-	}
+#pragma omp atomic
+	current++;
       }
       image[i][j] /= g_samples;
     }
 #pragma omp critical
-    {
-      cout << "\r" << setw(3) << static_cast<size_t>((static_cast<double>(current) / static_cast<double>(total)) * 100.0) << "% done";
-    }
+    cout << "\r" << setw(3) << static_cast<size_t>((static_cast<double>(current) / static_cast<double>(total)) * 100.0) << "% done";
   }
   cout << endl;
 
+  // Copy the pixels to the output bitmap.  
+  output_bitmap = FreeImage_Allocate(g_w, g_h, 24, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK);
+  bpp = FreeImage_GetLine(output_bitmap) / FreeImage_GetWidth(output_bitmap);
+  for (unsigned int y = 0; y < FreeImage_GetHeight(output_bitmap); y++) {
+    bits = FreeImage_GetScanLine(output_bitmap, y);
+    for (unsigned int x = 0; x < FreeImage_GetWidth(output_bitmap); x++) {
+      bits[FI_RGBA_RED] = static_cast<unsigned char>(pow(image[g_h - 1 - y][x].r, 1.0f / 2.2f) * 255.0f);
+      bits[FI_RGBA_GREEN] = static_cast<unsigned char>(pow(image[g_h - 1 - y][x].g, 1.0f / 2.2f) * 255.0f);
+      bits[FI_RGBA_BLUE] = static_cast<unsigned char>(pow(image[g_h - 1 - y][x].b, 1.0f / 2.2f) * 255.0f);
+      bits += bpp;
+    }
+  }
+
+  // Save the output image.
+  fif = FreeImage_GetFIFFromFilename(argc >= 3 ? argv[2] : OUT_FILE);
+  FreeImage_Save(fif, output_bitmap, argc >= 3 ? argv[2] : OUT_FILE);
+  FreeImage_Unload(output_bitmap);
+
+  // Clean up.
   delete tracer;
 
   for (size_t i = 0; i < figures.size(); i++) {
@@ -138,20 +157,12 @@ int main(int argc, char ** argv) {
   }
   lights.clear();
 
-  fprintf(out, "P6 %d %d %d ", g_w, g_h, 255);
-  for (int i = 0; i < g_h; i++) {
-    for (int j = 0; j < g_w; j++) {
-      fputc(static_cast<int>(pow(image[i][j].r, 1.0f / 2.2f) * 255.0f), out);
-      fputc(static_cast<int>(pow(image[i][j].g, 1.0f / 2.2f) * 255.0f), out);
-      fputc(static_cast<int>(pow(image[i][j].b, 1.0f / 2.2f) * 255.0f), out);
-    }
-  }
-  fclose(out);
-
   for (int i = 0; i < g_h; i++)
     delete[] image[i];
   delete[] image;
 
+  FreeImage_DeInitialise();
+  
   return EXIT_SUCCESS;
 }
 

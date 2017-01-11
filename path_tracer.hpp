@@ -6,11 +6,9 @@
 
 class PathTracer: public Tracer {
 public:
-  bool indirect_l;
+  PathTracer(): Tracer() { }
 
-  PathTracer(): Tracer(), indirect_l(false) { }
-
-  PathTracer(int h, int w, float fov, bool il): Tracer(h, w, fov), indirect_l(il) { };
+  PathTracer(int h, int w, float fov): Tracer(h, w, fov) { };
 
   virtual ~PathTracer();
 

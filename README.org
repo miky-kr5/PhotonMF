@@ -6,4 +6,4 @@ An implementation of path tracing with photon mapping.
 
 An image generated with the current version of the program:
 
-[[file:output.ppm]]
+[[file:output.png]]
