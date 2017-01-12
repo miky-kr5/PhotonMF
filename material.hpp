@@ -23,6 +23,10 @@ public:
     m_brdf = _brdf != NULL ? _brdf : static_cast<BRDF *>(new PhongBRDF());
   }
 
+  ~Material() {
+    delete m_brdf;
+  }
+  
   Material(const Material & m) {
     m_diffuse = m.m_diffuse;
     m_specular = m.m_specular;
