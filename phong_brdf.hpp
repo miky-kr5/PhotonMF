@@ -4,7 +4,7 @@
 
 #include "brdf.hpp"
 
-class PhongBRDF: public BRDF{
+class PhongBRDF: public BRDF {
 public:
   PhongBRDF() { }
   virtual ~PhongBRDF() { }

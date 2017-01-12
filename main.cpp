@@ -88,6 +88,7 @@ int main(int argc, char ** argv) {
   
   scene_2(figures, lights, i_model_view);
 
+  // Create the tracer object.
   if (g_tracer == WHITTED)
     tracer = static_cast<Tracer *>(new WhittedTracer(g_h, g_w, g_fov, g_max_depth));
   else if(g_tracer == MONTE_CARLO)

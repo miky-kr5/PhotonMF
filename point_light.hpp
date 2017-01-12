@@ -12,7 +12,7 @@ public:
 
   PointLight(): Light(), m_const_att(1.0f), m_lin_att(0.0f), m_quad_att(0.0f) { }
 
-  PointLight(BRDF * _brdf, vec3 _p, vec3 _d, vec3 _s, float _c, float _l, float _q): Light(_brdf, _p, _d, _s), m_const_att(_c), m_lin_att(_l), m_quad_att(_q) { }
+  PointLight(vec3 _p, vec3 _d, vec3 _s, float _c, float _l, float _q): Light(_p, _d, _s), m_const_att(_c), m_lin_att(_l), m_quad_att(_q) { }
 
   virtual vec3 direction(vec3 point);
   virtual float distance(vec3 point);

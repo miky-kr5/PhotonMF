@@ -5,7 +5,6 @@
 #include <glm/vec3.hpp>
 
 #include "ray.hpp"
-#include "material.hpp"
 
 using glm::vec3;
 

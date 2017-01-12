@@ -88,7 +88,7 @@ vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *
 	amb_color = vis ? BCKG_COLOR * max(dot(n, rr.m_direction), 0.0f) / PDF : vec3(0.0f);
       }
       
-      color += ((dir_diff_color + ind_color + amb_color) * (_f->m_mat.m_diffuse / pi<float>())) + (_f->m_mat.m_diffuse * dir_spec_color);
+      color += ((dir_diff_color + ind_color + amb_color) * (_f->m_mat.m_diffuse / pi<float>())) + (_f->m_mat.m_specular * dir_spec_color);
 
       // Determine the specular reflection color.
       if (_f->m_mat.m_rho > 0.0f && rec_level < m_max_depth) {

@@ -8,7 +8,7 @@ class DirectionalLight: public Light {
 public:
   DirectionalLight(): Light() { }
 
-  DirectionalLight(BRDF * _brdf, vec3 _p, vec3 _d, vec3 _s): Light(_brdf, _p, _d, _s) { }
+  DirectionalLight(vec3 _p, vec3 _d, vec3 _s): Light(_p, _d, _s) { }
 
   virtual vec3 direction(vec3 point);
   virtual float distance(vec3 point);
