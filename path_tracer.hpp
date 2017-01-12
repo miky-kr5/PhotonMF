@@ -8,7 +8,7 @@ class PathTracer: public Tracer {
 public:
   PathTracer(): Tracer() { }
 
-  PathTracer(int h, int w, float fov, unsigned int max_depth): Tracer(h, w, fov, max_depth) { };
+  PathTracer(unsigned int max_depth): Tracer(max_depth) { };
 
   virtual ~PathTracer();
 

@@ -3,13 +3,12 @@
 #include <glm/gtc/constants.hpp>
 
 #include "path_tracer.hpp"
+#include "sampling.hpp"
 
 using std::numeric_limits;
 using namespace glm;
 
 PathTracer::~PathTracer() { }
-
-static const float PDF = (1.0f / (2.0f * pi<float>()));
 
 vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *> & v_lights, unsigned int rec_level) const {
   float t, _t;
@@ -121,5 +120,5 @@ vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *
     return clamp(color, 0.0f, 1.0f);
 
   } else
-    return /*vec3(0.0f)*/ BCKG_COLOR;
+    return BCKG_COLOR;
 }

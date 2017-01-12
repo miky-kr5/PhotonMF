@@ -20,29 +20,18 @@ extern const vec3 BCKG_COLOR;
 
 class Tracer {
 public:
-  int m_h;
-  int m_w;
-  float m_fov;
-  float m_a_ratio;
   unsigned int m_max_depth;
 
-  Tracer(): m_h(480), m_w(640), m_fov(90.0f), m_a_ratio(640.0f / 480.0f), m_max_depth(5) { }
+  Tracer(): m_max_depth(5) { }
 
-  Tracer(int h, int w, float fov, unsigned int max_depth): m_h(h), m_w(w), m_fov(fov), m_max_depth(max_depth) {
-    m_a_ratio = static_cast<float>(w) / static_cast<float>(h);
-  };
+  Tracer(unsigned int max_depth): m_max_depth(max_depth) { }
 
   virtual ~Tracer() { }
 
-  vec2 sample_pixel(int i, int j) const;
   virtual vec3 trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *> & v_lights, unsigned int rec_level) const = 0;
 
 protected:
-  float random01() const;
   float fresnel(const vec3 & i, const vec3 & n, const float ir1, const float ir2) const;
-  void create_coords_system(const vec3 &n, vec3 &nt, vec3 &nb) const;
-  vec3 sample_hemisphere(const float r1, const float r2) const;
-  void rotate_sample(vec3 & sample, const vec3 & n) const;
 };
 
 #endif

@@ -11,6 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <FreeImage.h>
 
+#include "camera.hpp"
 #include "ray.hpp"
 #include "figure.hpp"
 #include "sphere.hpp"
@@ -32,10 +33,10 @@ using namespace glm;
 ////////////////////////////////////////////
 // Function prototypes.
 ////////////////////////////////////////////
-static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
-static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
-static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
-static void scene_4(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
+static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Camera * c);
+static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Camera * c);
+static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Camera * c);
+static void scene_4(vector<Figure *> & vf, vector<Light *> & vl, Camera * c);
 static void print_usage(char ** const argv);
 static void parse_args(int argc, char ** const argv);
 
@@ -70,30 +71,31 @@ int main(int argc, char ** argv) {
   Tracer * tracer;
   size_t total;
   size_t current = 0;
-  mat4x4 i_model_view;
-  vec4 dir, orig;
   FIBITMAP * output_bitmap;
   FREE_IMAGE_FORMAT fif;
   BYTE * bits;
   int bpp;
+  Camera  * cam;
 
   parse_args(argc, argv);
   
   // Initialize everything.
   FreeImage_Initialise();
+
+  cam = new Camera(g_h, g_w, g_fov);
   
   image = new vec3*[g_h];
   for (int i = 0; i < g_h; i++) {
     image[i] = new vec3[g_w];
   }
   
-  scene_2(figures, lights, i_model_view);
+  scene_2(figures, lights, cam);
 
   // Create the tracer object.
   if (g_tracer == WHITTED)
-    tracer = static_cast<Tracer *>(new WhittedTracer(g_h, g_w, g_fov, g_max_depth));
+    tracer = static_cast<Tracer *>(new WhittedTracer(g_max_depth));
   else if(g_tracer == MONTE_CARLO)
-    tracer = static_cast<Tracer *>(new PathTracer(g_h, g_w, g_fov, g_max_depth));
+    tracer = static_cast<Tracer *>(new PathTracer(g_max_depth));
   else if(g_tracer == JENSEN) {
     cerr << "Photon mapping coming soon." << endl;
     return EXIT_FAILURE;
@@ -102,17 +104,16 @@ int main(int argc, char ** argv) {
     print_usage(argv);
     return EXIT_FAILURE;
   }
-
+  
   // Generate the image.
   total = g_h * g_w * g_samples;
-#pragma omp parallel for schedule(dynamic, 1) private(r, sample, dir, orig) shared(current)
+#pragma omp parallel for schedule(dynamic, 1) private(r, sample) shared(current)
   for (int i = 0; i < g_h; i++) {
     for (int j = 0; j < g_w; j++) {
       for (int k = 0; k < g_samples; k++) {
-	sample = tracer->sample_pixel(i, j);
-	dir = i_model_view * normalize(vec4(sample, -0.5f, 1.0f) - vec4(0.0f, 0.0f, 0.0f, 1.0f));
-	orig = i_model_view * vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	r = Ray(dir.x, dir.y, dir.z, orig.x, orig.y, orig.z);
+	sample = cam->sample_pixel(i, j);
+	r = Ray(normalize(vec3(sample, -0.5f) - vec3(0.0f)), vec3(0.0f));
+	cam->view_to_world(r);
 	image[i][j] += tracer->trace_ray(r, figures, lights, 0);
 #pragma omp atomic
 	current++;
@@ -146,6 +147,7 @@ int main(int argc, char ** argv) {
   if (g_out_file_name != NULL)
     free(g_out_file_name);
 
+  delete cam;
   delete tracer;
 
   for (size_t i = 0; i < figures.size(); i++) {
@@ -292,7 +294,7 @@ void parse_args(int argc, char ** const argv) {
   g_input_file = argv[optind];
 }
 
-void scene_1(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
+void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
   Sphere * s;
   Plane * p;
   Disk * d;
@@ -367,12 +369,12 @@ void scene_1(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view)
   vl.push_back(static_cast<Light *>(l));
 }
 
-void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
+void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
   Sphere * s;
   Plane * p;
   Disk * d;
   PointLight * l;
- 
+  
   s = new Sphere(0.2f, 0.0f, -0.75f, 0.25f);
   s->m_mat->m_diffuse = vec3(1.0f);
   s->m_mat->m_rho = 0.2f;
@@ -435,14 +437,19 @@ void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view)
   vl.push_back(static_cast<Light *>(l));
 }
 
-void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
+void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
   Sphere * s;
   Plane * p;
   DirectionalLight * l;
   vec3 eye = vec3(0.0f, 1.5f, 0.0f);
   vec3 center = vec3(0.0f, 0.0f, -2.0f);
   vec3 left = vec3(-1.0f, 0.0f, 0.0f);
-  vec3 up = cross(center - eye, left);
+
+  c->m_eye = eye;
+  c->m_look = center;
+  c->m_up = cross(normalize(center - eye), left);
+  c->translate(vec3(1.0f, 0.0f, 0.0f));
+  c->roll(15.0f);
 
   s = new Sphere(0.0f, -0.15f, -2.0f, 1.0f);
   s->m_mat->m_diffuse = vec3(1.0f, 0.5f, 0.0f);
@@ -498,11 +505,9 @@ void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view)
   l->m_position = normalize(vec3(1.0f, 0.0f, 1.0f));
   l->m_diffuse = vec3(0.5f);
   vl.push_back(static_cast<Light *>(l));
-
-  i_model_view = inverse(lookAt(eye, center, up));
 }
 
-void scene_4(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
+void scene_4(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
   Sphere * s;
   Plane * p;
 
