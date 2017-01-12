@@ -19,6 +19,7 @@
 #include "light.hpp"
 #include "directional_light.hpp"
 #include "point_light.hpp"
+#include "spot_light.hpp"
 #include "tracer.hpp"
 #include "path_tracer.hpp"
 #include "whitted_tracer.hpp"
@@ -364,7 +365,7 @@ void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view)
   Plane * p;
   Disk * d;
   PointLight * l;
-
+ 
   s = new Sphere(0.2f, 0.0f, -0.75f, 0.25f);
   s->m_mat.m_diffuse = vec3(1.0f);
   s->m_mat.m_rho = 0.2f;
