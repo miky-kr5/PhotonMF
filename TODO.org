@@ -1,4 +1,4 @@
-* Features [8/20]
+* Features [9/20]
 
  - [X] Perspective projection
  - [X] Ray-sphere intersection
@@ -11,7 +11,7 @@
  - [ ] Octree mesh
  - [X] Directional lights
  - [X] Point lights
- - [ ] Spotlights
+ - [X] Spotlights
  - [ ] Area lights
    - [ ] Sphere lights
    - [ ] Box/planar lights
