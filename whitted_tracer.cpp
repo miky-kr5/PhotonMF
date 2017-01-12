@@ -35,7 +35,7 @@ vec3 WhittedTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Ligh
     n = _f->normal_at_int(r, t);
     
     // Check if the material is not reflective/refractive.
-    if (!_f->m_mat.m_refract) {
+    if (!_f->m_mat->m_refract) {
       // Calculate the direct lighting.
       for (size_t l = 0; l < v_lights.size(); l++) {
 	// For every light source
@@ -51,22 +51,22 @@ vec3 WhittedTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Ligh
 	}
 
 	// Evaluate the shading model accounting for visibility.
-	dir_diff_color += vis ? v_lights[l]->diffuse(n, r, i_pos, _f->m_mat) : vec3(0.0f);
-	dir_spec_color += vis ? v_lights[l]->specular(n, r, i_pos, _f->m_mat) : vec3(0.0f);
+	dir_diff_color += vis ? v_lights[l]->diffuse(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
+	dir_spec_color += vis ? v_lights[l]->specular(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
       }
       
-      color += (dir_diff_color * (_f->m_mat.m_diffuse / pi<float>())) + (_f->m_mat.m_specular * dir_spec_color);
+      color += (dir_diff_color * (_f->m_mat->m_diffuse / pi<float>())) + (_f->m_mat->m_specular * dir_spec_color);
 
       // Determine the specular reflection color.
-      if (_f->m_mat.m_rho > 0.0f && rec_level < m_max_depth) {
+      if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
 	rr = Ray(normalize(reflect(r.m_direction, n)), i_pos + n * BIAS);
-	color += _f->m_mat.m_rho * trace_ray(rr, v_figures, v_lights, rec_level + 1);
-      } else if (_f->m_mat.m_rho > 0.0f && rec_level >= m_max_depth)
+	color += _f->m_mat->m_rho * trace_ray(rr, v_figures, v_lights, rec_level + 1);
+      } else if (_f->m_mat->m_rho > 0.0f && rec_level >= m_max_depth)
 	  return vec3(0.0f);
 
     } else {
       // If the material has transmission enabled, calculate the Fresnel term.
-      kr = fresnel(r.m_direction, n, r.m_ref_index, _f->m_mat.m_ref_index);
+      kr = fresnel(r.m_direction, n, r.m_ref_index, _f->m_mat->m_ref_index);
 
       // Determine the specular reflection color.
       if (kr > 0.0f && rec_level < m_max_depth) {
@@ -76,8 +76,8 @@ vec3 WhittedTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Ligh
 	return vec3(0.0f);
 
       // Determine the transmission color.
-      if (_f->m_mat.m_refract && kr < 1.0f && rec_level < m_max_depth) {
-	rr = Ray(normalize(refract(r.m_direction, n, r.m_ref_index / _f->m_mat.m_ref_index)), i_pos - n * BIAS, _f->m_mat.m_ref_index);
+      if (_f->m_mat->m_refract && kr < 1.0f && rec_level < m_max_depth) {
+	rr = Ray(normalize(refract(r.m_direction, n, r.m_ref_index / _f->m_mat->m_ref_index)), i_pos - n * BIAS, _f->m_mat->m_ref_index);
 	color += (1.0f - kr) * trace_ray(rr, v_figures, v_lights, rec_level + 1);
       } else if (rec_level >= m_max_depth)
 	  return vec3(0.0f);

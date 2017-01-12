@@ -11,9 +11,15 @@ using glm::vec3;
 
 class Figure {
 public:
-  Material m_mat;
+  Material * m_mat;
 
-  virtual ~Figure() { }
+  Figure(BRDF * brdf = NULL) {
+    m_mat = new Material(brdf);
+  }
+  
+  virtual ~Figure() {
+    delete m_mat;
+  }
 
   virtual bool intersect(Ray & r, float & t) const = 0;
   virtual vec3 normal_at_int(Ray & r, float & t) const = 0;

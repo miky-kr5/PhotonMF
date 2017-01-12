@@ -13,20 +13,11 @@ class Disk : public Plane {
 public:
   float m_radius;
   
-  Disk(): m_radius(1.0f) {
-    m_point = vec3(0.0f);
-    m_normal = vec3(0.0f, 1.0f, 0.0f);
-  }
+  Disk(BRDF * _brdf = NULL): Plane(_brdf), m_radius(1.0f) { }
 
-  Disk(float x, float y, float z, float nx, float ny, float nz, float _r): m_radius(_r) {
-    m_point = vec3(x, y, z);
-    m_normal = normalize(vec3(nx, ny, nz));
-  }
+  Disk(float x, float y, float z, float nx, float ny, float nz, float _r, BRDF * _brdf = NULL): Plane(x, y, z, nx, ny, nz, _brdf), m_radius(_r) { }
 
-  Disk(vec3 _p, vec3 _n, float _r): m_radius(_r) {
-    m_point = _p;
-    m_normal = normalize(_n);
-  }
+  Disk(vec3 _p, vec3 _n, float _r, BRDF * _brdf = NULL): Plane(_p, _n, _brdf), m_radius(_r) { }
 
   virtual ~Disk() { }
 
