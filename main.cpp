@@ -47,7 +47,7 @@ static const char * OUT_FILE = "output.png";
 ////////////////////////////////////////////
 // Global variables.
 ////////////////////////////////////////////
-typedef enum TRACERS { NONE, WHITTED, MONTE_CARLO } tracer_t;
+typedef enum TRACERS { NONE, WHITTED, MONTE_CARLO, JENSEN } tracer_t;
 
 static char * g_input_file;
 static char * g_out_file_name = NULL;
@@ -94,7 +94,10 @@ int main(int argc, char ** argv) {
     tracer = static_cast<Tracer *>(new WhittedTracer(g_h, g_w, g_fov, g_max_depth));
   else if(g_tracer == MONTE_CARLO)
     tracer = static_cast<Tracer *>(new PathTracer(g_h, g_w, g_fov, g_max_depth));
-  else {
+  else if(g_tracer == JENSEN) {
+    cerr << "Photon mapping coming soon." << endl;
+    return EXIT_FAILURE;
+  } else {
     cerr << "Must specify a ray tracer with \"-t\"." << endl;
     print_usage(argv);
     return EXIT_FAILURE;
@@ -171,8 +174,10 @@ void print_usage(char ** const argv) {
   cerr << "USAGE: " << argv[0] << " [OPTIONS]... FILE" << endl;
   cerr << "Renders the scene specified by the scene file FILE." << endl << endl;
   cerr << "Mandatory options: " << endl;
-  cerr << "  -t\tRay tracing method to use." << endl;
-  cerr << "    \tValid values: \"whitted\" \"monte_carlo\"." << endl << endl;
+  cerr << "  -t\tRay tracing method to use. Valid values: " << endl;
+  cerr << "    \twhitted     Classic Whitted ray tracing." << endl;
+  cerr << "    \tmonte_carlo Monte Carlo path tracing." << endl;
+  cerr << "    \tjensen      Photon mapping. " << endl << endl;
   cerr << "Extra options:" << endl;
   cerr << "  -o\tOutput image file name with extension." << endl;
   cerr << "    \tDefaults to \"output.png\"." << endl;
@@ -203,6 +208,8 @@ void parse_args(int argc, char ** const argv) {
 	g_tracer = WHITTED;
       else if(strcmp("monte_carlo", optarg) == 0 || strcmp("montecarlo", optarg) == 0)
 	g_tracer = MONTE_CARLO;
+      else if(strcmp("jensen", optarg) == 0)
+	g_tracer = JENSEN;
       else {
 	cerr << "Invalid ray tracer: " << optarg << endl;
 	print_usage(argv);
