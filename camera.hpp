@@ -26,11 +26,10 @@ public:
     m_up(normalize(_u)),
     m_h(h),
     m_w(w),
-    m_fov(fov)
-  {
-    m_a_ratio = static_cast<float>(w) / static_cast<float>(h);
-    m_inv_view_matrix = inverse(lookAt(_e, _l, _u));
-  }
+    m_fov(fov),
+    m_a_ratio(static_cast<float>(w) / static_cast<float>(h)),
+    m_inv_view_matrix(inverse(lookAt(_e, _l, normalize(_u))))
+  { }
 
   void reset();
   void translate(vec3 t);
