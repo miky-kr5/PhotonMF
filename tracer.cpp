@@ -6,6 +6,8 @@
 
 using namespace glm;
 
+const float BIAS = 0.000001f;
+
 const vec3 BCKG_COLOR = vec3(1.0f);
 
 float Tracer::random01() const {

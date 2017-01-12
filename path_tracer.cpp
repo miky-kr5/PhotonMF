@@ -58,7 +58,7 @@ vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *
       }
 
       // Calculate indirect lighting contribution.
-      if (rec_level < MAX_RECURSION) {
+      if (rec_level < m_max_depth) {
 	r1 = random01();
 	r2 = random01();
 	sample = sample_hemisphere(r1, r2);
@@ -91,10 +91,10 @@ vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *
       color += ((dir_diff_color + ind_color + amb_color) * (_f->m_mat.m_diffuse / pi<float>())) + (_f->m_mat.m_diffuse * dir_spec_color);
 
       // Determine the specular reflection color.
-      if (_f->m_mat.m_rho > 0.0f && rec_level < MAX_RECURSION) {
+      if (_f->m_mat.m_rho > 0.0f && rec_level < m_max_depth) {
 	rr = Ray(normalize(reflect(r.m_direction, n)), i_pos + n * BIAS);
 	color += _f->m_mat.m_rho * trace_ray(rr, v_figures, v_lights, rec_level + 1);
-      } else if (_f->m_mat.m_rho > 0.0f && rec_level >= MAX_RECURSION)
+      } else if (_f->m_mat.m_rho > 0.0f && rec_level >= m_max_depth)
 	  return vec3(0.0f);
 
     } else {
@@ -102,17 +102,17 @@ vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *
       kr = fresnel(r.m_direction, n, r.m_ref_index, _f->m_mat.m_ref_index);
 
       // Determine the specular reflection color.
-      if (kr > 0.0f && rec_level < MAX_RECURSION) {
+      if (kr > 0.0f && rec_level < m_max_depth) {
 	rr = Ray(normalize(reflect(r.m_direction, n)), i_pos + n * BIAS);
 	color += kr * trace_ray(rr, v_figures, v_lights, rec_level + 1);
-      } else if (rec_level >= MAX_RECURSION)
+      } else if (rec_level >= m_max_depth)
 	return vec3(0.0f);
 
       // Determine the transmission color.
-      if (_f->m_mat.m_refract && kr < 1.0f && rec_level < MAX_RECURSION) {
+      if (_f->m_mat.m_refract && kr < 1.0f && rec_level < m_max_depth) {
 	rr = Ray(normalize(refract(r.m_direction, n, r.m_ref_index / _f->m_mat.m_ref_index)), i_pos - n * BIAS, _f->m_mat.m_ref_index);
 	color += (1.0f - kr) * trace_ray(rr, v_figures, v_lights, rec_level + 1);
-      } else if (rec_level >= MAX_RECURSION)
+      } else if (rec_level >= m_max_depth)
 	  return vec3(0.0f);
 
     }

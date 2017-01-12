@@ -28,27 +28,39 @@
 using namespace std;
 using namespace glm;
 
+////////////////////////////////////////////
 // Function prototypes.
+////////////////////////////////////////////
 static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
 static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
 static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
 static void scene_4(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view);
 static void print_usage(char ** const argv);
+static void parse_args(int argc, char ** const argv);
 
+////////////////////////////////////////////
 // Constants.
+////////////////////////////////////////////
 static const char * OUT_FILE = "output.png";
 
+////////////////////////////////////////////
 // Global variables.
+////////////////////////////////////////////
 typedef enum TRACERS { NONE, WHITTED, MONTE_CARLO } tracer_t;
 
-static char * input_file;
+static char * g_input_file;
+static char * g_out_file_name = NULL;
 static int g_samples = 25;
 static float g_fov = 45.f;
 static int g_w = 640;
 static int g_h = 480;
 static vec3 ** image;
 static tracer_t g_tracer = NONE;
+static unsigned int g_max_depth = 5;
 
+////////////////////////////////////////////
+// Main function.
+////////////////////////////////////////////
 int main(int argc, char ** argv) {
   Ray r;
   vec2 sample;
@@ -63,94 +75,9 @@ int main(int argc, char ** argv) {
   FREE_IMAGE_FORMAT fif;
   BYTE * bits;
   int bpp;
-  int opt;
-  int x_pos;
-  char * out_file_name = NULL;
 
-  // Check command line arguments.
-  if(argc == 1) {
-    print_usage(argv);
-    return EXIT_FAILURE;
-  }
-
-  while((opt = getopt(argc, argv, ":t:s:w:f:o:")) != -1) {
-    switch (opt) {
-    case 't':
-      if (strcmp("whitted", optarg) == 0 )
-	g_tracer = WHITTED;
-      else if(strcmp("monte_carlo", optarg) == 0)
-	g_tracer = MONTE_CARLO;
-      else {
-	cerr << "Invalid ray tracer: " << optarg << endl;
-	print_usage(argv);
-	return EXIT_FAILURE;
-      }
-
-      break;
-
-    case 'w':
-      for (x_pos = 0; optarg[x_pos]; x_pos++)
-	if (optarg[x_pos] == 'x')
-	  break;
-
-      if (optarg[x_pos] == '\0') {
-	cerr << "Invalid screen resolution: " << optarg << endl;
-	print_usage(argv);
-	return EXIT_FAILURE;
-      } else {
-	optarg[x_pos] = '\0';
-	g_w = atoi(optarg);
-	g_h = atoi(&optarg[x_pos + 1]);
-	if (g_w <= 0 || g_h <= 0) {
-	  cerr << "Invalid screen resolution: " << optarg << endl;
-	  print_usage(argv);
-	  return EXIT_FAILURE;
-	}
-      }
-
-      break;
-
-    case 's':
-      g_samples = atoi(optarg);
-      if (g_samples == 0) {
-	cerr << "Samples per pixel must be a positive integer." << endl;
-	print_usage(argv);
-	return EXIT_FAILURE;
-      }
-
-      break;
-
-    case 'o':
-      out_file_name = (char*)malloc((strlen(optarg) + 1) * sizeof(char));
-      strcpy(out_file_name, optarg);
-
-      break;
-
-    case 'f':
-      g_fov = atof(optarg);
-      if (g_fov < 1.0f) {
-	cerr << "FoV must be greater than or equal to 1.0 degrees." << endl;
-	print_usage(argv);
-	return EXIT_FAILURE;
-      }
-      
-      break;
-
-    case ':':
-      cerr << "Option \"-" << static_cast<char>(optopt) << "\" requires an argument." << endl;
-      print_usage(argv);
-      return EXIT_FAILURE;
-      
-      break;
-
-    case '?':
-    default:
-      cerr << "Unrecognized option: \"-" << static_cast<char>(optopt) << "\"." << endl;
-    }
-  }
-    
-  input_file = argv[optind];
-
+  parse_args(argc, argv);
+  
   // Initialize everything.
   FreeImage_Initialise();
   
@@ -162,9 +89,9 @@ int main(int argc, char ** argv) {
   scene_2(figures, lights, i_model_view);
 
   if (g_tracer == WHITTED)
-    tracer = static_cast<Tracer *>(new WhittedTracer(g_h, g_w, g_fov));
+    tracer = static_cast<Tracer *>(new WhittedTracer(g_h, g_w, g_fov, g_max_depth));
   else if(g_tracer == MONTE_CARLO)
-    tracer = static_cast<Tracer *>(new PathTracer(g_h, g_w, g_fov));
+    tracer = static_cast<Tracer *>(new PathTracer(g_h, g_w, g_fov, g_max_depth));
   else {
     cerr << "Must specify a ray tracer with \"-t\"." << endl;
     print_usage(argv);
@@ -206,13 +133,13 @@ int main(int argc, char ** argv) {
   }
 
   // Save the output image.
-  fif = FreeImage_GetFIFFromFilename(out_file_name != NULL ? out_file_name : OUT_FILE);
-  FreeImage_Save(fif, output_bitmap, out_file_name != NULL ? out_file_name : OUT_FILE);
+  fif = FreeImage_GetFIFFromFilename(g_out_file_name != NULL ? g_out_file_name : OUT_FILE);
+  FreeImage_Save(fif, output_bitmap, g_out_file_name != NULL ? g_out_file_name : OUT_FILE);
   FreeImage_Unload(output_bitmap);
 
   // Clean up.
-  if (out_file_name != NULL)
-    free(out_file_name);
+  if (g_out_file_name != NULL)
+    free(g_out_file_name);
 
   delete tracer;
 
@@ -235,23 +162,128 @@ int main(int argc, char ** argv) {
   return EXIT_SUCCESS;
 }
 
-static void print_usage(char ** const argv) {
+////////////////////////////////////////////
+// Helper functions.
+////////////////////////////////////////////
+void print_usage(char ** const argv) {
   cerr << "USAGE: " << argv[0] << " [OPTIONS]... FILE" << endl;
-  cerr << "Renders the scene specified by the scene file FILE." << endl;
+  cerr << "Renders the scene specified by the scene file FILE." << endl << endl;
   cerr << "Mandatory options: " << endl;
   cerr << "  -t\tRay tracing method to use." << endl;
-  cerr << "    \tValid values: \"whitted\" \"monte_carlo\"." << endl;
-  cerr << "Optional options:" << endl;
-  cerr << "  -o\t Output image file name with extension." << endl;
+  cerr << "    \tValid values: \"whitted\" \"monte_carlo\"." << endl << endl;
+  cerr << "Extra options:" << endl;
+  cerr << "  -o\tOutput image file name with extension." << endl;
+  cerr << "    \tDefaults to \"output.png\"." << endl;
   cerr << "  -f\tField of view to use in degrees." << endl;
   cerr << "    \tDefaults to 45.0 degrees." << endl;
   cerr << "  -s\tNumber of samples per pixel." << endl;
   cerr << "    \tDefaults to 25 samples." << endl;
   cerr << "  -w\tImage size in pixels as \"WIDTHxHEIGHT\"." << endl;
   cerr << "    \tDefaults to 640x480 pixels." << endl;
+  cerr << "  -r\tMaxmimum recursion depth." << endl;
+  cerr << "    \tDefaults to 5." << endl;
 }
 
-static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
+void parse_args(int argc, char ** const argv) {
+  int opt;
+  int x_pos;
+
+  // Check command line arguments.
+  if(argc == 1) {
+    print_usage(argv);
+    exit(EXIT_FAILURE);
+  }
+
+  while((opt = getopt(argc, argv, ":t:s:w:f:o:r:")) != -1) {
+    switch (opt) {
+    case 't':
+      if (strcmp("whitted", optarg) == 0 )
+	g_tracer = WHITTED;
+      else if(strcmp("monte_carlo", optarg) == 0 || strcmp("montecarlo", optarg) == 0)
+	g_tracer = MONTE_CARLO;
+      else {
+	cerr << "Invalid ray tracer: " << optarg << endl;
+	print_usage(argv);
+	exit(EXIT_FAILURE);
+      }
+
+      break;
+
+    case 'w':
+      for (x_pos = 0; optarg[x_pos]; x_pos++)
+	if (optarg[x_pos] == 'x')
+	  break;
+
+      if (optarg[x_pos] == '\0') {
+	cerr << "Invalid screen resolution: " << optarg << endl;
+	print_usage(argv);
+	exit(EXIT_FAILURE);
+      } else {
+	optarg[x_pos] = '\0';
+	g_w = atoi(optarg);
+	g_h = atoi(&optarg[x_pos + 1]);
+	if (g_w <= 0 || g_h <= 0) {
+	  cerr << "Invalid screen resolution: " << optarg << endl;
+	  print_usage(argv);
+	  exit(EXIT_FAILURE);
+	}
+      }
+
+      break;
+
+    case 's':
+      g_samples = atoi(optarg);
+      if (g_samples <= 0) {
+	cerr << "Samples per pixel must be a positive integer." << endl;
+	print_usage(argv);
+	exit(EXIT_FAILURE);
+      }
+
+      break;
+
+    case 'o':
+      g_out_file_name = (char*)malloc((strlen(optarg) + 1) * sizeof(char));
+      strcpy(g_out_file_name, optarg);
+
+      break;
+
+    case 'f':
+      g_fov = atof(optarg);
+      if (g_fov < 1.0f) {
+	cerr << "FoV must be greater than or equal to 1.0 degrees." << endl;
+	print_usage(argv);
+	exit(EXIT_FAILURE);
+      }
+      
+      break;
+
+    case 'r':
+      g_max_depth = static_cast<unsigned int>(abs(atoi(optarg)));
+      if (g_max_depth == 0) {
+	cerr << "Recursion depth must be a positive integer." << endl;
+	print_usage(argv);
+	exit(EXIT_FAILURE);
+      }
+
+      break;
+      
+    case ':':
+      cerr << "Option \"-" << static_cast<char>(optopt) << "\" requires an argument." << endl;
+      print_usage(argv);
+      exit(EXIT_FAILURE);
+      
+      break;
+
+    case '?':
+    default:
+      cerr << "Unrecognized option: \"-" << static_cast<char>(optopt) << "\"." << endl;
+    }
+  }
+    
+  g_input_file = argv[optind];
+}
+
+void scene_1(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
   Sphere * s;
   Plane * p;
   Disk * d;
@@ -326,7 +358,7 @@ static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   vl.push_back(static_cast<Light *>(l));
 }
 
-static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
+void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
   Sphere * s;
   Plane * p;
   Disk * d;
@@ -394,7 +426,7 @@ static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   vl.push_back(static_cast<Light *>(l));
 }
 
-static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
+void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
   Sphere * s;
   Plane * p;
   DirectionalLight * l;
@@ -461,7 +493,7 @@ static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_mode
   i_model_view = inverse(lookAt(eye, center, up));
 }
 
-static void scene_4(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
+void scene_4(vector<Figure *> & vf, vector<Light *> & vl, mat4x4 & i_model_view) {
   Sphere * s;
   Plane * p;
 

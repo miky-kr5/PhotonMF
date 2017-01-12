@@ -14,8 +14,7 @@ using std::vector;
 using glm::vec2;
 using glm::vec3;
 
-#define MAX_RECURSION 3
-#define BIAS 0.000001f
+extern const float BIAS;
 
 extern const vec3 BCKG_COLOR;
 
@@ -25,10 +24,11 @@ public:
   int m_w;
   float m_fov;
   float m_a_ratio;
+  unsigned int m_max_depth;
 
-  Tracer(): m_h(480), m_w(640), m_fov(90.0f), m_a_ratio(640.0f / 480.0f) { }
+  Tracer(): m_h(480), m_w(640), m_fov(90.0f), m_a_ratio(640.0f / 480.0f), m_max_depth(5) { }
 
-  Tracer(int h, int w, float fov): m_h(h), m_w(w), m_fov(fov) {
+  Tracer(int h, int w, float fov, unsigned int max_depth): m_h(h), m_w(w), m_fov(fov), m_max_depth(max_depth) {
     m_a_ratio = static_cast<float>(w) / static_cast<float>(h);
   };
 

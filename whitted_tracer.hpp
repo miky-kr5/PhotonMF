@@ -8,7 +8,7 @@ class WhittedTracer: public Tracer {
 public:
   WhittedTracer(): Tracer() { }
 
-  WhittedTracer(int h, int w, float fov): Tracer(h, w, fov) { };
+  WhittedTracer(int h, int w, float fov, unsigned int max_depth): Tracer(h, w, fov, max_depth) { };
 
   virtual ~WhittedTracer();
 
