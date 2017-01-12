@@ -6,11 +6,9 @@
 
 class WhittedTracer: public Tracer {
 public:
-  bool indirect_l;
+  WhittedTracer(): Tracer() { }
 
-  WhittedTracer(): Tracer(), indirect_l(false) { }
-
-  WhittedTracer(int h, int w, float fov, bool il): Tracer(h, w, fov), indirect_l(il) { };
+  WhittedTracer(int h, int w, float fov): Tracer(h, w, fov) { };
 
   virtual ~WhittedTracer();
 
