@@ -31,6 +31,12 @@ using namespace std;
 using namespace glm;
 
 ////////////////////////////////////////////
+// Defines.
+////////////////////////////////////////////
+#define ANSI_BOLD_YELLOW "\x1b[1;33m"
+#define ANSI_RESET_STYLE "\x1b[m"
+
+////////////////////////////////////////////
 // Function prototypes.
 ////////////////////////////////////////////
 static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Camera * c);
@@ -92,19 +98,19 @@ int main(int argc, char ** argv) {
   scene_2(figures, lights, cam);
 
   // Create the tracer object.
-  cout << "Rendering the input file: " << g_input_file << endl;
+  cout << "Rendering the input file: " << ANSI_BOLD_YELLOW << g_input_file << ANSI_RESET_STYLE << endl;
   cout << "The scene contains: " << endl;
-  cout << "  " << figures.size() << (figures.size() != 1 ? " figures." : " figure.") << endl;
-  cout << "  " << lights.size() << " light "  << (lights.size() != 1 ? "sources." : "source.") << endl;
-  cout << "Output image resolution is " << g_w << "x" << g_h << " pixels." << endl;
-  cout << "Using " << g_samples << " samples per pixel." << endl;
-  cout << "Maximum ray tree depth is " << g_max_depth << "." << endl;
+  cout << "  " << ANSI_BOLD_YELLOW << figures.size() << ANSI_RESET_STYLE << (figures.size() != 1 ? " figures." : " figure.") << endl;
+  cout << "  " << ANSI_BOLD_YELLOW << lights.size() << ANSI_RESET_STYLE << " light "  << (lights.size() != 1 ? "sources." : "source.") << endl;
+  cout << "Output image resolution is " << ANSI_BOLD_YELLOW << g_w << "x" << g_h << ANSI_RESET_STYLE << " pixels." << endl;
+  cout << "Using " << ANSI_BOLD_YELLOW << g_samples << ANSI_RESET_STYLE << " samples per pixel." << endl;
+  cout << "Maximum ray tree depth is " << ANSI_BOLD_YELLOW << g_max_depth << ANSI_RESET_STYLE << "." << endl;
 
   if (g_tracer == WHITTED) {
-    cout << "Using Whitted ray tracing." << endl;
+    cout << "Using " << ANSI_BOLD_YELLOW << "Whitted" << ANSI_RESET_STYLE << " ray tracing." << endl;
     tracer = static_cast<Tracer *>(new WhittedTracer(g_max_depth));
   } else if(g_tracer == MONTE_CARLO) {
-    cout << "Using Monte Carlo path tracing." << endl;
+    cout << "Using " << ANSI_BOLD_YELLOW << "Monte Carlo" << ANSI_RESET_STYLE << " path tracing." << endl;
     tracer = static_cast<Tracer *>(new PathTracer(g_max_depth));
   } else if(g_tracer == JENSEN) {
     cerr << "Photon mapping coming soon." << endl;
@@ -117,7 +123,7 @@ int main(int argc, char ** argv) {
   
   // Generate the image.
   total = g_h * g_w * g_samples;
-  cout << "Tracing a total of " << total << " primary rays:" << endl;
+  cout << "Tracing a total of " << ANSI_BOLD_YELLOW << total << ANSI_RESET_STYLE << " primary rays:" << endl;
 #pragma omp parallel for schedule(dynamic, 1) private(r, sample) shared(current)
   for (int i = 0; i < g_h; i++) {
     for (int j = 0; j < g_w; j++) {
