@@ -26,6 +26,7 @@
 #include "whitted_tracer.hpp"
 #include "brdf.hpp"
 #include "phong_brdf.hpp"
+#include "hsa_brdf.hpp"
 
 using namespace std;
 using namespace glm;
@@ -95,7 +96,7 @@ int main(int argc, char ** argv) {
     image[i] = new vec3[g_w];
   }
   
-  scene_2(figures, lights, cam);
+  scene_3(figures, lights, cam);
 
   // Create the tracer object.
   cout << "Rendering the input file: " << ANSI_BOLD_YELLOW << g_input_file << ANSI_RESET_STYLE << endl;
@@ -409,26 +410,32 @@ void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
 
   p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
   p->m_mat->m_diffuse = vec3(0.0f, 1.0f, 0.0f);
+  p->m_mat->m_specular = vec3(0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   p = new Plane(vec3(-2.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f));
   p->m_mat->m_diffuse = vec3(1.0f, 0.0f, 0.0f);
+  p->m_mat->m_specular = vec3(0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   p = new Plane(vec3(2.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f));
   p->m_mat->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
+  p->m_mat->m_specular = vec3(0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   p = new Plane(vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f));
   p->m_mat->m_diffuse = vec3(0.0f, 1.0f, 1.0f);
+  p->m_mat->m_specular = vec3(0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   p = new Plane(vec3(0.0f, 0.0f, -2.0f), vec3(0.0f, 0.0f, 1.0f));
   p->m_mat->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
+  p->m_mat->m_specular = vec3(0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   p = new Plane(vec3(0.0f, 0.0f, 1.1f), vec3(0.0f, 0.0f, -1.0f));
   p->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+  p->m_mat->m_specular = vec3(0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
   s = new Sphere(-0.5f, -0.5f, -1.5f, 0.5f);
@@ -467,7 +474,8 @@ void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
 void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
   Sphere * s;
   Plane * p;
-  DirectionalLight * l;
+  SpotLight * l;
+  DirectionalLight * l2;
   vec3 eye = vec3(0.0f, 1.5f, 0.0f);
   vec3 center = vec3(0.0f, 0.0f, -2.0f);
   vec3 left = vec3(-1.0f, 0.0f, 0.0f);
@@ -476,33 +484,33 @@ void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
   c->m_look = center;
   c->m_up = cross(normalize(center - eye), left);
   c->translate(vec3(1.0f, 0.0f, 0.0f));
-  c->roll(15.0f);
+  //c->roll(15.0f);
 
-  s = new Sphere(0.0f, -0.15f, -2.0f, 1.0f);
-  s->m_mat->m_diffuse = vec3(1.0f, 0.5f, 0.0f);
-  s->m_mat->m_specular = vec3(0.3f);
-  s->m_mat->m_shininess = 5.0f;
-  s->m_mat->m_rho = 0.4f;
-  s->m_mat->m_refract = true;
-  s->m_mat->m_ref_index = 1.33f;
-  vf.push_back(static_cast<Figure *>(s));
+  // s = new Sphere(0.0f, -0.15f, -2.0f, 1.0f);
+  // s->m_mat->m_diffuse = vec3(1.0f, 0.5f, 0.0f);
+  // s->m_mat->m_specular = vec3(0.3f);
+  // s->m_mat->m_shininess = 5.0f;
+  // s->m_mat->m_rho = 0.4f;
+  // s->m_mat->m_refract = true;
+  // s->m_mat->m_ref_index = 1.33f;
+  // vf.push_back(static_cast<Figure *>(s));
 
-  s = new Sphere(0.0f, -0.15f, -2.0f, 0.5f);
-  s->m_mat->m_diffuse = vec3(0.0f);
-  s->m_mat->m_specular = vec3(0.0f);
-  s->m_mat->m_rho = 0.0f;
-  s->m_mat->m_refract = true;
-  s->m_mat->m_ref_index = 2.6f;
-  vf.push_back(static_cast<Figure *>(s));
+  // s = new Sphere(0.0f, -0.15f, -2.0f, 0.5f);
+  // s->m_mat->m_diffuse = vec3(0.0f);
+  // s->m_mat->m_specular = vec3(0.0f);
+  // s->m_mat->m_rho = 0.0f;
+  // s->m_mat->m_refract = true;
+  // s->m_mat->m_ref_index = 2.6f;
+  // vf.push_back(static_cast<Figure *>(s));
 
-  s = new Sphere(2.0f, 0.0f, -2.0f, 1.0f);
-  s->m_mat->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
-  s->m_mat->m_rho = 1.0f;
-  vf.push_back(static_cast<Figure *>(s));
-
-  s = new Sphere(-1.0f, 0.25f, -3.25f, 1.0f);
+  s = new Sphere(2.0f, 0.0f, -2.0f, 1.0f, new HeidrichSeidelAnisotropicBRDF(vec3(0.0f, 1.0f, 0.0f)));
   s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-  s->m_mat->m_shininess = 20.0f;
+  s->m_mat->m_shininess = 128.0f;
+  vf.push_back(static_cast<Figure *>(s));
+
+  s = new Sphere(-1.0f, 0.0f, -3.25f, 1.0f);
+  s->m_mat->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
+  s->m_mat->m_rho = 0.4f;
   vf.push_back(static_cast<Figure *>(s));
 
   p = new Plane(vec3(0.0f, -1.5f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
@@ -510,28 +518,29 @@ void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
   p->m_mat->m_specular = vec3(0.0f);
   vf.push_back(static_cast<Figure *>(p));
 
-  l = new DirectionalLight();
-  l->m_position = normalize(vec3(-1.0f, 1.0f, -1.0f));
-  l->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
-  l->m_specular = vec3(0.0f, 1.0f, 0.0f);
+  l = new SpotLight();
+  l->m_position = normalize(vec3(-2.0f, 1.5f, -1.0f));
+  l->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+  l->m_spot_dir = normalize(vec3(0.5f, 0.0f, -2.5f) - vec3(-2.0f, 1.5f, -1.0f));
+  l->m_spot_cutoff = 89.0f;
+  l->m_spot_exponent = 10.0f;
   vl.push_back(static_cast<Light *>(l));
 
-  l = new DirectionalLight();
-  l->m_position = normalize(vec3(0.0f, 1.0f, 1.0f));
-  l->m_diffuse = vec3(1.0f, 0.0f, 0.0f);
-  l->m_specular = vec3(1.0f, 0.0f, 0.0f);
-  vl.push_back(static_cast<Light *>(l));
+  l2 = new DirectionalLight();
+  l2->m_position = normalize(vec3(-1.0f, 0.7f, 1.0f));
+  l2->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+  vl.push_back(static_cast<Light *>(l2));
 
-  l = new DirectionalLight();
-  l->m_position = normalize(vec3(1.0f, 1.0f, -1.0f));
-  l->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
-  l->m_specular = vec3(0.0f, 0.0f, 1.0f);
-  vl.push_back(static_cast<Light *>(l));
+  l2 = new DirectionalLight();
+  l2->m_position = normalize(vec3(-0.5f, 0.7f, 1.0f));
+  l2->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
+  l2->m_specular = vec3(0.0f, 0.0f, 1.0f);
+  vl.push_back(static_cast<Light *>(l2));
 
-  l = new DirectionalLight();
-  l->m_position = normalize(vec3(1.0f, 0.0f, 1.0f));
-  l->m_diffuse = vec3(0.5f);
-  vl.push_back(static_cast<Light *>(l));
+  // l = new DirectionalLight();
+  // l->m_position = normalize(vec3(1.0f, 0.0f, 1.0f));
+  // l->m_diffuse = vec3(0.5f);
+  // vl.push_back(static_cast<Light *>(l));
 }
 
 void scene_4(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {

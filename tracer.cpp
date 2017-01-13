@@ -6,7 +6,7 @@ using glm::refract;
 
 const float BIAS = 0.000001f;
 
-const vec3 BCKG_COLOR = vec3(1.0f);
+const vec3 BCKG_COLOR = vec3(0.1f);
 
 float Tracer::fresnel(const vec3 & i, const vec3 & n, const float ir1, const float ir2) const {
   float cos_t1 = dot(i, n);

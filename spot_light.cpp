@@ -25,7 +25,7 @@ vec3 SpotLight::diffuse(vec3 normal, Ray & r, vec3 i_pos, Material & m) const {
   if (acos(spot_effect) < radians(m_spot_cutoff)) {
     spot_effect = pow(spot_effect, m_spot_exponent);
     att = spot_effect / (m_const_att + (m_lin_att * d) + (m_quad_att * (d * d)));
-    return att * m.m_brdf->diffuse(l_dir, normal, r, m_diffuse);
+    return att * m.m_brdf->diffuse(l_dir, normal, r, i_pos, m_diffuse);
 
   } else
     return vec3(0.0f);
@@ -43,7 +43,7 @@ vec3 SpotLight::specular(vec3 normal, Ray & r, vec3 i_pos, Material & m) const {
   if (acos(spot_effect) < radians(m_spot_cutoff)) {
     spot_effect = pow(spot_effect, m_spot_exponent);
     att = spot_effect / (m_const_att + (m_lin_att * d) + (m_quad_att * (d * d)));
-    return att * m.m_brdf->specular(l_dir, normal, r, m_specular, m.m_shininess);
+    return att * m.m_brdf->specular(l_dir, normal, r, i_pos, m_specular, m.m_shininess);
   } else
     return vec3(0.0f);
 }

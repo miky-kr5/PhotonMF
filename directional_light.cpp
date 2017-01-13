@@ -21,9 +21,9 @@ inline float DirectionalLight::distance(vec3 point) {
 }
 
 vec3 DirectionalLight::diffuse(vec3 normal, Ray & r, vec3 i_pos, Material & m) const {
-  return m.m_brdf->diffuse(m_position, normal, r, m_diffuse);
+  return m.m_brdf->diffuse(m_position, normal, r, i_pos, m_diffuse);
 }
 
 vec3 DirectionalLight::specular(vec3 normal, Ray & r, vec3 i_pos, Material & m) const {
-  return m.m_brdf->specular(m_position, normal, r, m_specular, m.m_shininess);
+  return m.m_brdf->specular(m_position, normal, r, i_pos, m_specular, m.m_shininess);
 }

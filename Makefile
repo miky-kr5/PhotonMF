@@ -1,6 +1,6 @@
 CXX = g++
 TARGET = ray
-OBJECTS = main.o sampling.o camera.o disk.o plane.o sphere.o directional_light.o phong_brdf.o point_light.o spot_light.o tracer.o path_tracer.o whitted_tracer.o
+OBJECTS = main.o sampling.o camera.o disk.o plane.o sphere.o phong_brdf.o hsa_brdf.o directional_light.o point_light.o spot_light.o tracer.o path_tracer.o whitted_tracer.o
 DEPENDS = $(OBJECTS:.o=.d)
 CXXFLAGS = -ansi -pedantic -Wall -DGLM_FORCE_RADIANS -fopenmp
 LDLIBS = -lfreeimage
