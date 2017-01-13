@@ -50,7 +50,7 @@ static const char * OUT_FILE = "output.png";
 ////////////////////////////////////////////
 typedef enum TRACERS { NONE, WHITTED, MONTE_CARLO, JENSEN } tracer_t;
 
-static char * g_input_file;
+static char * g_input_file = NULL;
 static char * g_out_file_name = NULL;
 static int g_samples = 25;
 static float g_fov = 45.f;
@@ -92,11 +92,21 @@ int main(int argc, char ** argv) {
   scene_2(figures, lights, cam);
 
   // Create the tracer object.
-  if (g_tracer == WHITTED)
+  cout << "Rendering the input file: " << g_input_file << endl;
+  cout << "The scene contains: " << endl;
+  cout << "  " << figures.size() << (figures.size() != 1 ? " figures." : " figure.") << endl;
+  cout << "  " << lights.size() << " light "  << (lights.size() != 1 ? "sources." : "source.") << endl;
+  cout << "Output image resolution is " << g_w << "x" << g_h << " pixels." << endl;
+  cout << "Using " << g_samples << " samples per pixel." << endl;
+  cout << "Maximum ray tree depth is " << g_max_depth << "." << endl;
+
+  if (g_tracer == WHITTED) {
+    cout << "Using Whitted ray tracing." << endl;
     tracer = static_cast<Tracer *>(new WhittedTracer(g_max_depth));
-  else if(g_tracer == MONTE_CARLO)
+  } else if(g_tracer == MONTE_CARLO) {
+    cout << "Using Monte Carlo path tracing." << endl;
     tracer = static_cast<Tracer *>(new PathTracer(g_max_depth));
-  else if(g_tracer == JENSEN) {
+  } else if(g_tracer == JENSEN) {
     cerr << "Photon mapping coming soon." << endl;
     return EXIT_FAILURE;
   } else {
@@ -107,6 +117,7 @@ int main(int argc, char ** argv) {
   
   // Generate the image.
   total = g_h * g_w * g_samples;
+  cout << "Tracing a total of " << total << " primary rays:" << endl;
 #pragma omp parallel for schedule(dynamic, 1) private(r, sample) shared(current)
   for (int i = 0; i < g_h; i++) {
     for (int j = 0; j < g_w; j++) {
@@ -121,11 +132,12 @@ int main(int argc, char ** argv) {
       image[i][j] /= g_samples;
     }
 #pragma omp critical
-    cout << "\r" << setw(3) << static_cast<size_t>((static_cast<double>(current) / static_cast<double>(total)) * 100.0) << "% done";
+    cout << "\r" << setw(3) << static_cast<size_t>((static_cast<double>(current) / static_cast<double>(total)) * 100.0) << "% done.";
   }
   cout << endl;
 
-  // Copy the pixels to the output bitmap.  
+  // Copy the pixels to the output bitmap.
+  cout << "Saving output image." << endl;
   output_bitmap = FreeImage_Allocate(g_w, g_h, 24, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK);
   bpp = FreeImage_GetLine(output_bitmap) / FreeImage_GetWidth(output_bitmap);
   for (unsigned int y = 0; y < FreeImage_GetHeight(output_bitmap); y++) {
@@ -203,8 +215,13 @@ void parse_args(int argc, char ** const argv) {
     exit(EXIT_FAILURE);
   }
 
-  while((opt = getopt(argc, argv, ":t:s:w:f:o:r:")) != -1) {
+  while((opt = getopt(argc, argv, "-:t:s:w:f:o:r:")) != -1) {
     switch (opt) {
+    case 1:
+      g_input_file = (char *)malloc((strlen(optarg) + 1) * sizeof(char));
+      strcpy(g_input_file, optarg);
+      break;
+
     case 't':
       if (strcmp("whitted", optarg) == 0 )
 	g_tracer = WHITTED;
@@ -290,8 +307,12 @@ void parse_args(int argc, char ** const argv) {
       cerr << "Unrecognized option: \"-" << static_cast<char>(optopt) << "\"." << endl;
     }
   }
-    
-  g_input_file = argv[optind];
+
+  if (g_input_file == NULL) {
+    cerr << "Must specify an input file." << endl;
+    print_usage(argv);
+    exit(EXIT_FAILURE);
+  }
 }
 
 void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
