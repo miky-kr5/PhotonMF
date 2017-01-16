@@ -66,6 +66,8 @@ static int g_h = 480;
 static vec3 ** image;
 static tracer_t g_tracer = NONE;
 static unsigned int g_max_depth = 5;
+static float g_gamma = 2.2f;
+static float g_exposure = 0.0f;
 
 ////////////////////////////////////////////
 // Main function.
@@ -78,10 +80,12 @@ int main(int argc, char ** argv) {
   Tracer * tracer;
   size_t total;
   size_t current = 0;
+  FIBITMAP * input_bitmap;
   FIBITMAP * output_bitmap;
   FREE_IMAGE_FORMAT fif;
   BYTE * bits;
-  int bpp;
+  FIRGBF *pixel;
+  int pitch;
   Camera  * cam;
 
   parse_args(argc, argv);
@@ -96,7 +100,7 @@ int main(int argc, char ** argv) {
     image[i] = new vec3[g_w];
   }
   
-  scene_3(figures, lights, cam);
+  scene_2(figures, lights, cam);
 
   // Create the tracer object.
   cout << "Rendering the input file: " << ANSI_BOLD_YELLOW << g_input_file << ANSI_RESET_STYLE << endl;
@@ -145,21 +149,25 @@ int main(int argc, char ** argv) {
 
   // Copy the pixels to the output bitmap.
   cout << "Saving output image." << endl;
-  output_bitmap = FreeImage_Allocate(g_w, g_h, 24, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK);
-  bpp = FreeImage_GetLine(output_bitmap) / FreeImage_GetWidth(output_bitmap);
-  for (unsigned int y = 0; y < FreeImage_GetHeight(output_bitmap); y++) {
-    bits = FreeImage_GetScanLine(output_bitmap, y);
-    for (unsigned int x = 0; x < FreeImage_GetWidth(output_bitmap); x++) {
-      bits[FI_RGBA_RED] = static_cast<BYTE>(pow(image[g_h - 1 - y][x].r, 1.0f / 2.2f) * 255.0f);
-      bits[FI_RGBA_GREEN] = static_cast<BYTE>(pow(image[g_h - 1 - y][x].g, 1.0f / 2.2f) * 255.0f);
-      bits[FI_RGBA_BLUE] = static_cast<BYTE>(pow(image[g_h - 1 - y][x].b, 1.0f / 2.2f) * 255.0f);
-      bits += bpp;
+  input_bitmap = FreeImage_AllocateT(FIT_RGBF, g_w, g_h, 96);
+  pitch = FreeImage_GetPitch(input_bitmap);
+  bits = (BYTE*)FreeImage_GetBits(input_bitmap);
+  for (unsigned int y = 0; y < FreeImage_GetHeight(input_bitmap); y++) {
+    pixel = (FIRGBF*)bits;
+    for (unsigned int x = 0; x < FreeImage_GetWidth(input_bitmap); x++) {
+      pixel[x].red = image[g_h - 1 - y][x].r;
+      pixel[x].green = image[g_h - 1 - y][x].g;
+      pixel[x].blue = image[g_h - 1 - y][x].b;
     }
+    bits += pitch;
   }
 
+  output_bitmap = FreeImage_ToneMapping(input_bitmap, FITMO_DRAGO03, g_gamma, g_exposure);
+  
   // Save the output image.
   fif = FreeImage_GetFIFFromFilename(g_out_file_name != NULL ? g_out_file_name : OUT_FILE);
   FreeImage_Save(fif, output_bitmap, g_out_file_name != NULL ? g_out_file_name : OUT_FILE);
+  FreeImage_Unload(input_bitmap);
   FreeImage_Unload(output_bitmap);
 
   // Clean up.
@@ -210,6 +218,10 @@ void print_usage(char ** const argv) {
   cerr << "    \tDefaults to 640x480 pixels." << endl;
   cerr << "  -r\tMaxmimum recursion depth." << endl;
   cerr << "    \tDefaults to 5." << endl;
+  cerr << "  -g\tGamma correction value (>= 0)." << endl;
+  cerr << "    \tDefaults to 2.2" << endl;
+  cerr << "  -e\tExposure scale factor (in [-8, 8])." << endl;
+  cerr << "    \tDefaults to 0.0 (no correction)." << endl;
 }
 
 void parse_args(int argc, char ** const argv) {
@@ -222,13 +234,23 @@ void parse_args(int argc, char ** const argv) {
     exit(EXIT_FAILURE);
   }
 
-  while((opt = getopt(argc, argv, "-:t:s:w:f:o:r:")) != -1) {
+  while((opt = getopt(argc, argv, "-:t:s:w:f:o:r:g:e:")) != -1) {
     switch (opt) {
     case 1:
       g_input_file = (char *)malloc((strlen(optarg) + 1) * sizeof(char));
       strcpy(g_input_file, optarg);
       break;
 
+    case 'g':
+      g_gamma = atof(optarg);
+      g_gamma = g_gamma < 0.0f ? 0.0f : g_gamma;
+      break;
+
+    case 'e':
+      g_exposure = atof(optarg);
+      g_exposure = clamp(g_exposure, -8.0f, 8.0f);
+      break;
+      
     case 't':
       if (strcmp("whitted", optarg) == 0 )
 	g_tracer = WHITTED;

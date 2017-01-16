@@ -85,7 +85,7 @@ vec3 WhittedTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Ligh
     }
 
     // Return final color.
-    return clamp(color, 0.0f, 1.0f);
+    return color;
 
   } else
     return BCKG_COLOR;

@@ -117,7 +117,7 @@ vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *
     }
 
     // Return final color.
-    return clamp(color, 0.0f, 1.0f);
+    return color;
 
   } else
     return BCKG_COLOR;
