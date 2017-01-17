@@ -8,6 +8,7 @@
 
 #include "figure.hpp"
 #include "light.hpp"
+#include "environment.hpp"
 #include "ray.hpp"
 
 using std::vector;
@@ -28,7 +29,7 @@ public:
 
   virtual ~Tracer() { }
 
-  virtual vec3 trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *> & v_lights, unsigned int rec_level) const = 0;
+  virtual vec3 trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *> & v_lights, Environment * e, unsigned int rec_level) const = 0;
 
 protected:
   float fresnel(const vec3 & i, const vec3 & n, const float ir1, const float ir2) const;

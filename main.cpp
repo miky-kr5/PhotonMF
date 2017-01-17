@@ -27,6 +27,7 @@
 #include "brdf.hpp"
 #include "phong_brdf.hpp"
 #include "hsa_brdf.hpp"
+#include "environment.hpp"
 
 using namespace std;
 using namespace glm;
@@ -40,10 +41,10 @@ using namespace glm;
 ////////////////////////////////////////////
 // Function prototypes.
 ////////////////////////////////////////////
-static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Camera * c);
-static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Camera * c);
-static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Camera * c);
-static void scene_4(vector<Figure *> & vf, vector<Light *> & vl, Camera * c);
+static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
+static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
+static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
+static void scene_4(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
 static void print_usage(char ** const argv);
 static void parse_args(int argc, char ** const argv);
 
@@ -87,6 +88,7 @@ int main(int argc, char ** argv) {
   FIRGBF *pixel;
   int pitch;
   Camera  * cam;
+  Environment * env = NULL;
 
   parse_args(argc, argv);
   
@@ -100,7 +102,7 @@ int main(int argc, char ** argv) {
     image[i] = new vec3[g_w];
   }
   
-  scene_2(figures, lights, cam);
+  scene_3(figures, lights, env, cam);
 
   // Create the tracer object.
   cout << "Rendering the input file: " << ANSI_BOLD_YELLOW << g_input_file << ANSI_RESET_STYLE << endl;
@@ -136,7 +138,7 @@ int main(int argc, char ** argv) {
 	sample = cam->sample_pixel(i, j);
 	r = Ray(normalize(vec3(sample, -0.5f) - vec3(0.0f)), vec3(0.0f));
 	cam->view_to_world(r);
-	image[i][j] += tracer->trace_ray(r, figures, lights, 0);
+	image[i][j] += tracer->trace_ray(r, figures, lights, env, 0);
 #pragma omp atomic
 	current++;
       }
@@ -176,6 +178,8 @@ int main(int argc, char ** argv) {
 
   delete cam;
   delete tracer;
+  if (env != NULL)
+    delete env;
 
   for (size_t i = 0; i < figures.size(); i++) {
     delete figures[i];
@@ -344,12 +348,14 @@ void parse_args(int argc, char ** const argv) {
   }
 }
 
-void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
+void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
   Sphere * s;
   Plane * p;
   Disk * d;
   DirectionalLight * l;
 
+  e = new Environment(NULL, false, vec3(0.7f, 0.4f, 0.05f));
+  
   s = new Sphere(1.0f, 1.0f, -2.0f, 0.5f);
   s->m_mat->m_diffuse = vec3(1.0f, 0.0f, 0.0f);
   vf.push_back(static_cast<Figure *>(s));
@@ -419,7 +425,7 @@ void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
   vl.push_back(static_cast<Light *>(l));
 }
 
-void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
+void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
   Sphere * s;
   Plane * p;
   Disk * d;
@@ -493,15 +499,17 @@ void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
   vl.push_back(static_cast<Light *>(l));
 }
 
-void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
+void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
   Sphere * s;
-  Plane * p;
-  SpotLight * l;
-  DirectionalLight * l2;
-  vec3 eye = vec3(0.0f, 1.5f, 0.0f);
+  Disk * d;
+  // SpotLight * l;
+  // DirectionalLight * l2;
+  vec3 eye = vec3(0.0f, 1.5f, 1.0f);
   vec3 center = vec3(0.0f, 0.0f, -2.0f);
   vec3 left = vec3(-1.0f, 0.0f, 0.0f);
 
+  e = new Environment("textures/pisa.hdr");
+  
   c->m_eye = eye;
   c->m_look = center;
   c->m_up = cross(normalize(center - eye), left);
@@ -525,39 +533,44 @@ void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
   // s->m_mat->m_ref_index = 2.6f;
   // vf.push_back(static_cast<Figure *>(s));
 
-  s = new Sphere(2.0f, 0.0f, -2.0f, 1.0f, new HeidrichSeidelAnisotropicBRDF(vec3(0.0f, 1.0f, 0.0f)));
+  s = new Sphere(2.0f, 0.0f, -2.0f, 1.5f, new HeidrichSeidelAnisotropicBRDF(vec3(0.0f, 1.0f, 0.0f)));
   s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
   s->m_mat->m_shininess = 128.0f;
   vf.push_back(static_cast<Figure *>(s));
 
-  s = new Sphere(-1.0f, 0.0f, -3.25f, 1.0f);
+  s = new Sphere(-1.0f, 0.0f, -3.25f, 1.5f);
   s->m_mat->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
   s->m_mat->m_rho = 0.4f;
   vf.push_back(static_cast<Figure *>(s));
 
-  p = new Plane(vec3(0.0f, -1.5f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-  p->m_mat->m_diffuse = vec3(1.0f);
-  p->m_mat->m_specular = vec3(0.0f);
-  vf.push_back(static_cast<Figure *>(p));
+  s = new Sphere(1.0f, 0.0f, -3.25f, 1.5f);
+  s->m_mat->m_diffuse = vec3(1.0f);
+  s->m_mat->m_rho = 0.4f;
+  vf.push_back(static_cast<Figure *>(s));
+  
+  d = new Disk(vec3(1.0f, -1.5f, -3.25f), vec3(0.0f, 1.0f, 0.0f), 3.0f);
+  d->m_mat->m_diffuse = vec3(0.0f, 0.5f, 0.5f);
+  d->m_mat->m_specular = vec3(0.0f);
+  vf.push_back(static_cast<Figure *>(d));
+  
+  // l = new SpotLight();
+  // l->m_position = normalize(vec3(-2.0f, 1.5f, -1.0f));
+  // l->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+  // l->m_spot_dir = normalize(vec3(0.5f, 0.0f, -2.5f) - vec3(-2.0f, 1.5f, -1.0f));
+  // l->m_spot_cutoff = 89.0f;
+  // l->m_spot_exponent = 10.0f;
+  // vl.push_back(static_cast<Light *>(l));
 
-  l = new SpotLight();
-  l->m_position = normalize(vec3(-2.0f, 1.5f, -1.0f));
-  l->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-  l->m_spot_dir = normalize(vec3(0.5f, 0.0f, -2.5f) - vec3(-2.0f, 1.5f, -1.0f));
-  l->m_spot_cutoff = 89.0f;
-  l->m_spot_exponent = 10.0f;
-  vl.push_back(static_cast<Light *>(l));
+  // l2 = new DirectionalLight();
+  // l2->m_position = normalize(vec3(-1.0f, 0.7f, 1.0f));
+  // l2->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+  // vl.push_back(static_cast<Light *>(l2));
 
-  l2 = new DirectionalLight();
-  l2->m_position = normalize(vec3(-1.0f, 0.7f, 1.0f));
-  l2->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
-  vl.push_back(static_cast<Light *>(l2));
-
-  l2 = new DirectionalLight();
-  l2->m_position = normalize(vec3(-0.5f, 0.7f, 1.0f));
-  l2->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
-  l2->m_specular = vec3(0.0f, 0.0f, 1.0f);
-  vl.push_back(static_cast<Light *>(l2));
+  // l2 = new DirectionalLight();
+  // l2->m_position = normalize(vec3(-0.5f, 0.7f, 1.0f));
+  // l2->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
+  // l2->m_specular = vec3(0.0f, 0.0f, 1.0f);
+  // vl.push_back(static_cast<Light *>(l2));
 
   // l = new DirectionalLight();
   // l->m_position = normalize(vec3(1.0f, 0.0f, 1.0f));
@@ -565,12 +578,15 @@ void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
   // vl.push_back(static_cast<Light *>(l));
 }
 
-void scene_4(vector<Figure *> & vf, vector<Light *> & vl, Camera * c) {
+void scene_4(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
   Sphere * s;
   Plane * p;
 
+  e = new Environment("textures/pisa.hdr");
+  
   s = new Sphere(0.0f, 0.0f, -2.0f, 1.0f);
-  s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+  s->m_mat->m_diffuse = vec3(1.0f);
+  s->m_mat->m_rho = 0.3f;
   vf.push_back(static_cast<Figure *>(s));
 
   p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));

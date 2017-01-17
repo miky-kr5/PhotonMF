@@ -1,4 +1,4 @@
-* Features [9/20]
+* Features [12/20]
 
  - [X] Perspective projection
  - [X] Ray-sphere intersection
@@ -15,15 +15,15 @@
  - [ ] Area lights
    - [ ] Sphere lights
    - [ ] Box/planar lights
-   - [ ] Mesh lights
  - [X] Phong shading
  - [X] Specular reflections
  - [X] Transmission
  - [ ] Scene description input files (JSON)
  - [X] Indirect illumination
- - [ ] Russian roulette
- - [ ] Image based lightning
- - [ ] HDR light probes for IBL
- - [ ] Tone mapping
+ - [ ] Glossy reflections
+ - [X] Image based lighting
+ - [X] HDR light probes for IBL
+ - [X] Tone mapping
  - [ ] Texture mapping
  - [ ] Photon mapping
+
