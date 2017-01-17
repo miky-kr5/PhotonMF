@@ -116,7 +116,7 @@ vec3 PathTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *
     }
 
     // Return final color.
-    return color;
+    return _f->m_mat->m_emission + color;
 
   } else {
     if (e != NULL)

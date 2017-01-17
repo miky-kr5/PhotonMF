@@ -11,6 +11,7 @@ using glm::vec3;
 
 class Material {
 public:
+  vec3 m_emission;
   vec3 m_diffuse;
   vec3 m_specular;
   float m_rho;

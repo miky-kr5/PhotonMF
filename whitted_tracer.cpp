@@ -85,7 +85,7 @@ vec3 WhittedTracer::trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Ligh
     }
 
     // Return final color.
-    return color;
+    return _f->m_mat->m_emission + color;
 
   } else {
     if (e != NULL)
