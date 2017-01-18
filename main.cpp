@@ -11,6 +11,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <FreeImage.h>
 
+#include "sampling.hpp"
+#include "scene.hpp"
 #include "camera.hpp"
 #include "ray.hpp"
 #include "figure.hpp"
@@ -61,9 +63,10 @@ typedef enum TRACERS { NONE, WHITTED, MONTE_CARLO, JENSEN } tracer_t;
 static char * g_input_file = NULL;
 static char * g_out_file_name = NULL;
 static int g_samples = 25;
-static float g_fov = 45.f;
+static float g_fov = 45.0f;
 static int g_w = 640;
 static int g_h = 480;
+static float g_a_ratio = 640.0f / 480.0f;
 static vec3 ** image;
 static tracer_t g_tracer = NONE;
 static unsigned int g_max_depth = 5;
@@ -89,17 +92,25 @@ int main(int argc, char ** argv) {
   int pitch;
   Camera  * cam;
   Environment * env = NULL;
+  Scene * scn;
 
   parse_args(argc, argv);
   
   // Initialize everything.
   FreeImage_Initialise();
 
-  cam = new Camera(g_h, g_w, g_fov);
+  cam = new Camera();
   
   image = new vec3*[g_h];
   for (int i = 0; i < g_h; i++) {
     image[i] = new vec3[g_w];
+  }
+
+  try {
+    scn = new Scene("scenes/scene3.json");
+    delete scn;
+  } catch (SceneError & e) {
+    cout << e.what() << endl;
   }
   
   scene_3(figures, lights, env, cam);
@@ -135,7 +146,7 @@ int main(int argc, char ** argv) {
   for (int i = 0; i < g_h; i++) {
     for (int j = 0; j < g_w; j++) {
       for (int k = 0; k < g_samples; k++) {
-	sample = cam->sample_pixel(i, j);
+	sample = sample_pixel(i, j, g_w, g_h, g_a_ratio, g_fov);
 	r = Ray(normalize(vec3(sample, -0.5f) - vec3(0.0f)), vec3(0.0f));
 	cam->view_to_world(r);
 	image[i][j] += tracer->trace_ray(r, figures, lights, env, 0);
@@ -186,7 +197,7 @@ int main(int argc, char ** argv) {
   }
   figures.clear();
 
-  for (size_t i = 0; i < figures.size(); i++) {
+  for (size_t i = 0; i < lights.size(); i++) {
     delete lights[i];
   }
   lights.clear();
@@ -288,6 +299,7 @@ void parse_args(int argc, char ** const argv) {
 	  print_usage(argv);
 	  exit(EXIT_FAILURE);
 	}
+	g_a_ratio = static_cast<float>(g_w) / static_cast<float>(g_h);
       }
 
       break;

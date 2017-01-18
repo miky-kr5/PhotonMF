@@ -1,0 +1,49 @@
+{
+    "environment": {
+	"texture": "textures/pisa.hdr",
+	"light_probe": false
+    },
+
+    "camera": {
+	"eye": [0.0, 1.5, 1.0],
+	"look": [0.0, 0.0, -2.0],
+	"left": [-1.0, 0.0, 0.0]
+    },
+
+    "sphere": {
+	"position": [2.0, 0.0, -2.0],
+	"radius": 1.5,
+	"material": {
+	    "diffuse": [1.0f, 0.0f, 1.0f],
+	    "shininess": 128.0
+	}
+    },
+
+    "sphere":{
+	"position": [-1.0, 0.0, -3.25],
+	"radius": 1.5,
+	"material": {
+	    "diffuse": [1.0, 0.0, 1.0],
+	    "rho": 0.4
+	}
+    },
+
+    "sphere":{
+	"position": [1.0, 0.0, -3.25],
+	"radius": 1.5,
+	"material": {
+	    "diffuse": [1.0, 1.0, 1.0],
+	    "rho": 0.4
+	}
+    },
+
+    "disk": {
+	"position": [1.0, -1.5, -3.25],
+	"normal": [0.0, 1.0, 0.0],
+	"radius": 3.0,
+	"material": {
+	    "diffuse": [0.0, 0.5, 0.5],
+	    "specular": [0.0, 0.0, 0.0]
+	}
+    }
+}

@@ -1,7 +1,6 @@
 #include <glm/gtx/rotate_vector.hpp>
 
 #include "camera.hpp"
-#include "sampling.hpp"
 
 using glm::vec4;
 using glm::rotate;
@@ -47,18 +46,4 @@ void Camera::view_to_world(Ray & r) const {
 
   r.m_direction = vec3(dir.x, dir.y, dir.z);
   r.m_origin = vec3(orig.x, orig.y, orig.z);
-}
-
-vec2 Camera::sample_pixel(int i, int j) const {
-  float pxNDC;
-  float pyNDC;
-  float pxS;
-  float pyS;
-  pyNDC = (static_cast<float>(i) + random01()) / m_h;
-  pyS = (1.0f - (2.0f * pyNDC)) * glm::tan(radians(m_fov / 2.0f));
-  pxNDC = (static_cast<float>(j) + random01()) / m_w;
-  pxS = (2.0f * pxNDC) - 1.0f;
-  pxS *= m_a_ratio * glm::tan(radians(m_fov / 2.0f));
-
-  return vec2(pxS, pyS);
 }

@@ -20,7 +20,15 @@ public:
   bool m_refract;
   BRDF * m_brdf;
 
-  Material(BRDF * _brdf = NULL): m_diffuse(vec3(1.0f)), m_specular(vec3(1.0f)), m_rho(0.0f), m_shininess(89.0f), m_ref_index(1.0f), m_refract(false) {
+  Material(BRDF * _brdf = NULL):
+    m_emission(vec3(0.0f)),
+    m_diffuse(vec3(1.0f)),
+    m_specular(vec3(1.0f)),
+    m_rho(0.0f),
+    m_shininess(89.0f),
+    m_ref_index(1.0f),
+    m_refract(false)
+  {
     m_brdf = _brdf != NULL ? _brdf : static_cast<BRDF *>(new PhongBRDF());
   }
 
