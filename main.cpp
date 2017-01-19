@@ -43,10 +43,10 @@ using namespace glm;
 ////////////////////////////////////////////
 // Function prototypes.
 ////////////////////////////////////////////
-static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
-static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
-static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
-static void scene_4(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
+// static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
+// static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
+// static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
+// static void scene_4(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
 static void print_usage(char ** const argv);
 static void parse_args(int argc, char ** const argv);
 
@@ -79,8 +79,6 @@ static float g_exposure = 0.0f;
 int main(int argc, char ** argv) {
   Ray r;
   vec2 sample;
-  vector<Figure *> figures;
-  vector<Light *> lights;
   Tracer * tracer;
   size_t total;
   size_t current = 0;
@@ -90,8 +88,6 @@ int main(int argc, char ** argv) {
   BYTE * bits;
   FIRGBF *pixel;
   int pitch;
-  Camera  * cam;
-  Environment * env = NULL;
   Scene * scn;
 
   parse_args(argc, argv);
@@ -99,40 +95,39 @@ int main(int argc, char ** argv) {
   // Initialize everything.
   FreeImage_Initialise();
 
-  cam = new Camera();
-  
   image = new vec3*[g_h];
   for (int i = 0; i < g_h; i++) {
     image[i] = new vec3[g_w];
   }
 
   try {
-    scn = new Scene("scenes/scene3.json");
-    delete scn;
+    scn = new Scene(g_input_file);
   } catch (SceneError & e) {
     cout << e.what() << endl;
+    return EXIT_FAILURE;
   }
-  
-  scene_3(figures, lights, env, cam);
 
-  // Create the tracer object.
   cout << "Rendering the input file: " << ANSI_BOLD_YELLOW << g_input_file << ANSI_RESET_STYLE << endl;
   cout << "The scene contains: " << endl;
-  cout << "  " << ANSI_BOLD_YELLOW << figures.size() << ANSI_RESET_STYLE << (figures.size() != 1 ? " figures." : " figure.") << endl;
-  cout << "  " << ANSI_BOLD_YELLOW << lights.size() << ANSI_RESET_STYLE << " light "  << (lights.size() != 1 ? "sources." : "source.") << endl;
+  cout << "  " << ANSI_BOLD_YELLOW << scn->m_figures.size() << ANSI_RESET_STYLE << (scn->m_figures.size() != 1 ? " figures." : " figure.") << endl;
+  cout << "  " << ANSI_BOLD_YELLOW << scn->m_lights.size() << ANSI_RESET_STYLE << " light "  << (scn->m_lights.size() != 1 ? "sources." : "source.") << endl;
   cout << "Output image resolution is " << ANSI_BOLD_YELLOW << g_w << "x" << g_h << ANSI_RESET_STYLE << " pixels." << endl;
   cout << "Using " << ANSI_BOLD_YELLOW << g_samples << ANSI_RESET_STYLE << " samples per pixel." << endl;
   cout << "Maximum ray tree depth is " << ANSI_BOLD_YELLOW << g_max_depth << ANSI_RESET_STYLE << "." << endl;
 
+  // Create the tracer object.
   if (g_tracer == WHITTED) {
     cout << "Using " << ANSI_BOLD_YELLOW << "Whitted" << ANSI_RESET_STYLE << " ray tracing." << endl;
     tracer = static_cast<Tracer *>(new WhittedTracer(g_max_depth));
+
   } else if(g_tracer == MONTE_CARLO) {
     cout << "Using " << ANSI_BOLD_YELLOW << "Monte Carlo" << ANSI_RESET_STYLE << " path tracing." << endl;
     tracer = static_cast<Tracer *>(new PathTracer(g_max_depth));
+
   } else if(g_tracer == JENSEN) {
     cerr << "Photon mapping coming soon." << endl;
     return EXIT_FAILURE;
+
   } else {
     cerr << "Must specify a ray tracer with \"-t\"." << endl;
     print_usage(argv);
@@ -148,8 +143,8 @@ int main(int argc, char ** argv) {
       for (int k = 0; k < g_samples; k++) {
 	sample = sample_pixel(i, j, g_w, g_h, g_a_ratio, g_fov);
 	r = Ray(normalize(vec3(sample, -0.5f) - vec3(0.0f)), vec3(0.0f));
-	cam->view_to_world(r);
-	image[i][j] += tracer->trace_ray(r, figures, lights, env, 0);
+	scn->m_cam->view_to_world(r);
+	image[i][j] += tracer->trace_ray(r, scn, 0);
 #pragma omp atomic
 	current++;
       }
@@ -187,20 +182,8 @@ int main(int argc, char ** argv) {
   if (g_out_file_name != NULL)
     free(g_out_file_name);
 
-  delete cam;
+  delete scn;
   delete tracer;
-  if (env != NULL)
-    delete env;
-
-  for (size_t i = 0; i < figures.size(); i++) {
-    delete figures[i];
-  }
-  figures.clear();
-
-  for (size_t i = 0; i < lights.size(); i++) {
-    delete lights[i];
-  }
-  lights.clear();
 
   for (int i = 0; i < g_h; i++)
     delete[] image[i];
@@ -358,251 +341,4 @@ void parse_args(int argc, char ** const argv) {
     print_usage(argv);
     exit(EXIT_FAILURE);
   }
-}
-
-void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
-  Sphere * s;
-  Plane * p;
-  Disk * d;
-  DirectionalLight * l;
-
-  e = new Environment(NULL, false, vec3(0.7f, 0.4f, 0.05f));
-  
-  s = new Sphere(1.0f, 1.0f, -2.0f, 0.5f);
-  s->m_mat->m_diffuse = vec3(1.0f, 0.0f, 0.0f);
-  vf.push_back(static_cast<Figure *>(s));
-
-  s = new Sphere(-1.0f, 1.0f, -2.0f, 0.5f);
-  s->m_mat->m_diffuse = vec3(0.0f, 1.0f, 0.0f);
-  vf.push_back(static_cast<Figure *>(s));
-
-  s = new Sphere(1.0f, -1.0f, -2.0f, 0.5f);
-  s->m_mat->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
-  vf.push_back(static_cast<Figure *>(s));
-
-  s = new Sphere(-1.0f, -1.0f, -2.0f, 0.5f);
-  s->m_mat->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
-  vf.push_back(static_cast<Figure *>(s));
-
-  s = new Sphere(0.0f, 0.0f, -2.0f, 1.0f);
-  s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-  vf.push_back(static_cast<Figure *>(s));
-
-  p = new Plane(vec3(0.0f, -1.5f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-  p->m_mat->m_diffuse = vec3(1.0f, 0.5f, 0.4f);
-  vf.push_back(static_cast<Figure *>(p));
-
-  s = new Sphere(-1.5f, 0.0f, -2.0f, 0.5f);
-  s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
-  s->m_mat->m_rho = 0.3f;
-  vf.push_back(static_cast<Figure *>(s));
-
-  s = new Sphere(1.5f, 0.0f, -2.0f, 0.5f);
-  s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
-  s->m_mat->m_rho = 0.08f;
-  s->m_mat->m_refract = true;
-  s->m_mat->m_ref_index = 1.1f;
-  vf.push_back(static_cast<Figure *>(s));
-
-  s = new Sphere(0.0f, 1.5f, -2.0f, 0.5f);
-  s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
-  s->m_mat->m_rho = 0.5f;
-  vf.push_back(static_cast<Figure *>(s));
-
-  s = new Sphere(0.0f, 0.0f, -1.0f, 0.25f);
-  s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
-  s->m_mat->m_rho = 0.1f;
-  vf.push_back(static_cast<Figure *>(s));
-
-  d = new Disk(vec3(-0.0f, -0.0f, -0.5f), vec3(0.0f, 0.0f, 0.1f), 0.25f);
-  d->m_mat->m_diffuse = vec3(1.0f, 0.0f, 0.0f);
-  d->m_mat->m_rho = 0.3f;
-  d->m_mat->m_refract = true;
-  d->m_mat->m_ref_index = 1.33f;
-  vf.push_back(static_cast<Figure *>(d));
-
-  l = new DirectionalLight();
-  l->m_position = normalize(vec3(1.0f, 1.0f, 1.0f));
-  l->m_diffuse = vec3(0.0f, 1.0f, 1.0f);
-  vl.push_back(static_cast<Light *>(l));
-
-  l = new DirectionalLight();
-  l->m_position = normalize(vec3(-1.0f, 1.0f, 1.0f));
-  l->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-  vl.push_back(static_cast<Light *>(l));
-
-  l = new DirectionalLight();
-  l->m_position = normalize(vec3(0.0f, 1.0f, -1.0f));
-  l->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
-  vl.push_back(static_cast<Light *>(l));
-}
-
-void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
-  Sphere * s;
-  Plane * p;
-  Disk * d;
-  PointLight * l;
-  
-  s = new Sphere(0.2f, 0.0f, -0.75f, 0.25f);
-  s->m_mat->m_diffuse = vec3(1.0f);
-  s->m_mat->m_rho = 0.2f;
-  vf.push_back(static_cast<Figure *>(s));
-
-  p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-  p->m_mat->m_diffuse = vec3(0.0f, 1.0f, 0.0f);
-  p->m_mat->m_specular = vec3(0.0f);
-  vf.push_back(static_cast<Figure *>(p));
-
-  p = new Plane(vec3(-2.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f));
-  p->m_mat->m_diffuse = vec3(1.0f, 0.0f, 0.0f);
-  p->m_mat->m_specular = vec3(0.0f);
-  vf.push_back(static_cast<Figure *>(p));
-
-  p = new Plane(vec3(2.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f));
-  p->m_mat->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
-  p->m_mat->m_specular = vec3(0.0f);
-  vf.push_back(static_cast<Figure *>(p));
-
-  p = new Plane(vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f));
-  p->m_mat->m_diffuse = vec3(0.0f, 1.0f, 1.0f);
-  p->m_mat->m_specular = vec3(0.0f);
-  vf.push_back(static_cast<Figure *>(p));
-
-  p = new Plane(vec3(0.0f, 0.0f, -2.0f), vec3(0.0f, 0.0f, 1.0f));
-  p->m_mat->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
-  p->m_mat->m_specular = vec3(0.0f);
-  vf.push_back(static_cast<Figure *>(p));
-
-  p = new Plane(vec3(0.0f, 0.0f, 1.1f), vec3(0.0f, 0.0f, -1.0f));
-  p->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-  p->m_mat->m_specular = vec3(0.0f);
-  vf.push_back(static_cast<Figure *>(p));
-
-  s = new Sphere(-0.5f, -0.5f, -1.5f, 0.5f);
-  s->m_mat->m_diffuse = vec3(0.0f);
-  s->m_mat->m_rho = 1.0f;
-  vf.push_back(static_cast<Figure *>(s));
-
-  s = new Sphere(-0.5f, -0.5f, 0.6f, 0.5f);
-  s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-  s->m_mat->m_refract = true;
-  s->m_mat->m_ref_index = 1.33f;
-  vf.push_back(static_cast<Figure *>(s));
-
-  d = new Disk(vec3(-0.25f, 1.0f, -1.0f), vec3(1.0f, 0.0f, 0.0f), 0.25f);
-  d->m_mat->m_diffuse = vec3(1.0f);
-  vf.push_back(static_cast<Figure *>(d));
-
-  d = new Disk(vec3(0.25f, 1.0f, -1.0f), vec3(-1.0f, 0.0f, 0.0f), 0.25f);
-  d->m_mat->m_diffuse = vec3(1.0f);
-  vf.push_back(static_cast<Figure *>(d));
-
-  d = new Disk(vec3(0.0f, 1.0f, -1.25f), vec3(0.0f, 0.0f, 1.0f), 0.25f);
-  d->m_mat->m_diffuse = vec3(1.0f);
-  vf.push_back(static_cast<Figure *>(d));
-
-  d = new Disk(vec3(0.0f, 1.0f, -0.75f), vec3(0.0f, 0.0f, -1.0f), 0.25f);
-  d->m_mat->m_diffuse = vec3(1.0f);
-  vf.push_back(static_cast<Figure *>(d));
-
-  l = new PointLight();
-  l->m_position = vec3(0.0f, 0.9f, -1.0f);
-  l->m_diffuse = vec3(1.0f);
-  vl.push_back(static_cast<Light *>(l));
-}
-
-void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
-  Sphere * s;
-  Disk * d;
-  // SpotLight * l;
-  // DirectionalLight * l2;
-  vec3 eye = vec3(0.0f, 1.5f, 1.0f);
-  vec3 center = vec3(0.0f, 0.0f, -2.0f);
-  vec3 left = vec3(-1.0f, 0.0f, 0.0f);
-
-  e = new Environment("textures/pisa.hdr");
-  
-  c->m_eye = eye;
-  c->m_look = center;
-  c->m_up = cross(normalize(center - eye), left);
-  c->translate(vec3(1.0f, 0.0f, 0.0f));
-  //c->roll(15.0f);
-
-  // s = new Sphere(0.0f, -0.15f, -2.0f, 1.0f);
-  // s->m_mat->m_diffuse = vec3(1.0f, 0.5f, 0.0f);
-  // s->m_mat->m_specular = vec3(0.3f);
-  // s->m_mat->m_shininess = 5.0f;
-  // s->m_mat->m_rho = 0.4f;
-  // s->m_mat->m_refract = true;
-  // s->m_mat->m_ref_index = 1.33f;
-  // vf.push_back(static_cast<Figure *>(s));
-
-  // s = new Sphere(0.0f, -0.15f, -2.0f, 0.5f);
-  // s->m_mat->m_diffuse = vec3(0.0f);
-  // s->m_mat->m_specular = vec3(0.0f);
-  // s->m_mat->m_rho = 0.0f;
-  // s->m_mat->m_refract = true;
-  // s->m_mat->m_ref_index = 2.6f;
-  // vf.push_back(static_cast<Figure *>(s));
-
-  s = new Sphere(2.0f, 0.0f, -2.0f, 1.5f, new HeidrichSeidelAnisotropicBRDF(vec3(0.0f, 1.0f, 0.0f)));
-  s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-  s->m_mat->m_shininess = 128.0f;
-  vf.push_back(static_cast<Figure *>(s));
-
-  s = new Sphere(-1.0f, 0.0f, -3.25f, 1.5f);
-  s->m_mat->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
-  s->m_mat->m_rho = 0.4f;
-  vf.push_back(static_cast<Figure *>(s));
-
-  s = new Sphere(1.0f, 0.0f, -3.25f, 1.5f);
-  s->m_mat->m_diffuse = vec3(1.0f);
-  s->m_mat->m_rho = 0.4f;
-  vf.push_back(static_cast<Figure *>(s));
-  
-  d = new Disk(vec3(1.0f, -1.5f, -3.25f), vec3(0.0f, 1.0f, 0.0f), 3.0f);
-  d->m_mat->m_diffuse = vec3(0.0f, 0.5f, 0.5f);
-  d->m_mat->m_specular = vec3(0.0f);
-  vf.push_back(static_cast<Figure *>(d));
-  
-  // l = new SpotLight();
-  // l->m_position = normalize(vec3(-2.0f, 1.5f, -1.0f));
-  // l->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-  // l->m_spot_dir = normalize(vec3(0.5f, 0.0f, -2.5f) - vec3(-2.0f, 1.5f, -1.0f));
-  // l->m_spot_cutoff = 89.0f;
-  // l->m_spot_exponent = 10.0f;
-  // vl.push_back(static_cast<Light *>(l));
-
-  // l2 = new DirectionalLight();
-  // l2->m_position = normalize(vec3(-1.0f, 0.7f, 1.0f));
-  // l2->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
-  // vl.push_back(static_cast<Light *>(l2));
-
-  // l2 = new DirectionalLight();
-  // l2->m_position = normalize(vec3(-0.5f, 0.7f, 1.0f));
-  // l2->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
-  // l2->m_specular = vec3(0.0f, 0.0f, 1.0f);
-  // vl.push_back(static_cast<Light *>(l2));
-
-  // l = new DirectionalLight();
-  // l->m_position = normalize(vec3(1.0f, 0.0f, 1.0f));
-  // l->m_diffuse = vec3(0.5f);
-  // vl.push_back(static_cast<Light *>(l));
-}
-
-void scene_4(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
-  Sphere * s;
-  Plane * p;
-
-  e = new Environment("textures/pisa.hdr");
-  
-  s = new Sphere(0.0f, 0.0f, -2.0f, 1.0f);
-  s->m_mat->m_diffuse = vec3(1.0f);
-  s->m_mat->m_rho = 0.3f;
-  vf.push_back(static_cast<Figure *>(s));
-
-  p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-  p->m_mat->m_diffuse = vec3(1.0f);
-  p->m_mat->m_specular = vec3(0.0f);
-  vf.push_back(static_cast<Figure *>(p));
 }

@@ -7,15 +7,17 @@
     "camera": {
 	"eye": [0.0, 1.5, 1.0],
 	"look": [0.0, 0.0, -2.0],
-	"left": [-1.0, 0.0, 0.0]
+	"left": [-1.0, 0.0, 0.0],
+	"translation": [1.0, 0.0, 0.0]
     },
 
     "sphere": {
 	"position": [2.0, 0.0, -2.0],
 	"radius": 1.5,
 	"material": {
-	    "diffuse": [1.0f, 0.0f, 1.0f],
-	    "shininess": 128.0
+	    "diffuse": [1.0, 1.0, 0.0],
+	    "shininess": 128.0,
+	    "brdf": "heidrich-seidel"
 	}
     },
 

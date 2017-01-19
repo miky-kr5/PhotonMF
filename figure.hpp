@@ -13,8 +13,8 @@ class Figure {
 public:
   Material * m_mat;
 
-  Figure(BRDF * brdf = NULL) {
-    m_mat = new Material(brdf);
+  Figure(Material * mat = NULL) {
+    m_mat = mat == NULL ? new Material() : mat;
   }
   
   virtual ~Figure() {

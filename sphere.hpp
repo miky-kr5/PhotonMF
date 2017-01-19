@@ -13,11 +13,11 @@ public:
   vec3 m_center;
   float m_radius;
   
-  Sphere(BRDF * _brdf = NULL): Figure(_brdf), m_center(vec3(0.0f)), m_radius(0.5f) { }
+  Sphere(Material * mat = NULL): Figure(mat), m_center(vec3(0.0f)), m_radius(0.5f) { }
 
-  Sphere(float x, float y, float z, float r, BRDF * _brdf = NULL): Figure(_brdf), m_center(vec3(x, y, z)), m_radius(r) { }
+  Sphere(float x, float y, float z, float r, Material * mat = NULL): Figure(mat), m_center(vec3(x, y, z)), m_radius(r) { }
 
-  Sphere(vec3 _c, float r, BRDF * _brdf = NULL): Figure(_brdf), m_center(_c), m_radius(r) { }
+  Sphere(vec3 _c, float r, Material * mat = NULL): Figure(mat), m_center(_c), m_radius(r) { }
 
   virtual ~Sphere() { }
 

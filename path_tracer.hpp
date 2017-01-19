@@ -12,7 +12,7 @@ public:
 
   virtual ~PathTracer();
 
-  virtual vec3 trace_ray(Ray & r, vector<Figure *> & v_figures, vector<Light *> & v_lights, Environment * e, unsigned int rec_level) const;
+  virtual vec3 trace_ray(Ray & r, Scene * s, unsigned int rec_level) const;
 };
 
 #endif

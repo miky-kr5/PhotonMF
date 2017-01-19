@@ -27,3 +27,254 @@
  - [ ] Texture mapping
  - [ ] Photon mapping
 
+* Junk
+
+#+BEGIN_SRC c++
+  void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
+    Sphere * s;
+    Plane * p;
+    Disk * d;
+    DirectionalLight * l;
+
+    e = new Environment(NULL, false, vec3(0.7f, 0.4f, 0.05f));
+    
+    s = new Sphere(1.0f, 1.0f, -2.0f, 0.5f);
+    s->m_mat->m_diffuse = vec3(1.0f, 0.0f, 0.0f);
+    vf.push_back(static_cast<Figure *>(s));
+
+    s = new Sphere(-1.0f, 1.0f, -2.0f, 0.5f);
+    s->m_mat->m_diffuse = vec3(0.0f, 1.0f, 0.0f);
+    vf.push_back(static_cast<Figure *>(s));
+
+    s = new Sphere(1.0f, -1.0f, -2.0f, 0.5f);
+    s->m_mat->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
+    vf.push_back(static_cast<Figure *>(s));
+
+    s = new Sphere(-1.0f, -1.0f, -2.0f, 0.5f);
+    s->m_mat->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
+    vf.push_back(static_cast<Figure *>(s));
+
+    s = new Sphere(0.0f, 0.0f, -2.0f, 1.0f);
+    s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+    vf.push_back(static_cast<Figure *>(s));
+
+    p = new Plane(vec3(0.0f, -1.5f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
+    p->m_mat->m_diffuse = vec3(1.0f, 0.5f, 0.4f);
+    vf.push_back(static_cast<Figure *>(p));
+
+    s = new Sphere(-1.5f, 0.0f, -2.0f, 0.5f);
+    s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+    s->m_mat->m_rho = 0.3f;
+    vf.push_back(static_cast<Figure *>(s));
+
+    s = new Sphere(1.5f, 0.0f, -2.0f, 0.5f);
+    s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+    s->m_mat->m_rho = 0.08f;
+    s->m_mat->m_refract = true;
+    s->m_mat->m_ref_index = 1.1f;
+    vf.push_back(static_cast<Figure *>(s));
+
+    s = new Sphere(0.0f, 1.5f, -2.0f, 0.5f);
+    s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+    s->m_mat->m_rho = 0.5f;
+    vf.push_back(static_cast<Figure *>(s));
+
+    s = new Sphere(0.0f, 0.0f, -1.0f, 0.25f);
+    s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+    s->m_mat->m_rho = 0.1f;
+    vf.push_back(static_cast<Figure *>(s));
+
+    d = new Disk(vec3(-0.0f, -0.0f, -0.5f), vec3(0.0f, 0.0f, 0.1f), 0.25f);
+    d->m_mat->m_diffuse = vec3(1.0f, 0.0f, 0.0f);
+    d->m_mat->m_rho = 0.3f;
+    d->m_mat->m_refract = true;
+    d->m_mat->m_ref_index = 1.33f;
+    vf.push_back(static_cast<Figure *>(d));
+
+    l = new DirectionalLight();
+    l->m_position = normalize(vec3(1.0f, 1.0f, 1.0f));
+    l->m_diffuse = vec3(0.0f, 1.0f, 1.0f);
+    vl.push_back(static_cast<Light *>(l));
+
+    l = new DirectionalLight();
+    l->m_position = normalize(vec3(-1.0f, 1.0f, 1.0f));
+    l->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+    vl.push_back(static_cast<Light *>(l));
+
+    l = new DirectionalLight();
+    l->m_position = normalize(vec3(0.0f, 1.0f, -1.0f));
+    l->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
+    vl.push_back(static_cast<Light *>(l));
+  }
+
+  void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
+    Sphere * s;
+    Plane * p;
+    Disk * d;
+    PointLight * l;
+    
+    s = new Sphere(0.2f, 0.0f, -0.75f, 0.25f);
+    s->m_mat->m_diffuse = vec3(1.0f);
+    s->m_mat->m_rho = 0.2f;
+    vf.push_back(static_cast<Figure *>(s));
+
+    p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
+    p->m_mat->m_diffuse = vec3(0.0f, 1.0f, 0.0f);
+    p->m_mat->m_specular = vec3(0.0f);
+    vf.push_back(static_cast<Figure *>(p));
+
+    p = new Plane(vec3(-2.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f));
+    p->m_mat->m_diffuse = vec3(1.0f, 0.0f, 0.0f);
+    p->m_mat->m_specular = vec3(0.0f);
+    vf.push_back(static_cast<Figure *>(p));
+
+    p = new Plane(vec3(2.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f));
+    p->m_mat->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
+    p->m_mat->m_specular = vec3(0.0f);
+    vf.push_back(static_cast<Figure *>(p));
+
+    p = new Plane(vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f));
+    p->m_mat->m_diffuse = vec3(0.0f, 1.0f, 1.0f);
+    p->m_mat->m_specular = vec3(0.0f);
+    vf.push_back(static_cast<Figure *>(p));
+
+    p = new Plane(vec3(0.0f, 0.0f, -2.0f), vec3(0.0f, 0.0f, 1.0f));
+    p->m_mat->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
+    p->m_mat->m_specular = vec3(0.0f);
+    vf.push_back(static_cast<Figure *>(p));
+
+    p = new Plane(vec3(0.0f, 0.0f, 1.1f), vec3(0.0f, 0.0f, -1.0f));
+    p->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+    p->m_mat->m_specular = vec3(0.0f);
+    vf.push_back(static_cast<Figure *>(p));
+
+    s = new Sphere(-0.5f, -0.5f, -1.5f, 0.5f);
+    s->m_mat->m_diffuse = vec3(0.0f);
+    s->m_mat->m_rho = 1.0f;
+    vf.push_back(static_cast<Figure *>(s));
+
+    s = new Sphere(-0.5f, -0.5f, 0.6f, 0.5f);
+    s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+    s->m_mat->m_refract = true;
+    s->m_mat->m_ref_index = 1.33f;
+    vf.push_back(static_cast<Figure *>(s));
+
+    d = new Disk(vec3(-0.25f, 1.0f, -1.0f), vec3(1.0f, 0.0f, 0.0f), 0.25f);
+    d->m_mat->m_diffuse = vec3(1.0f);
+    vf.push_back(static_cast<Figure *>(d));
+
+    d = new Disk(vec3(0.25f, 1.0f, -1.0f), vec3(-1.0f, 0.0f, 0.0f), 0.25f);
+    d->m_mat->m_diffuse = vec3(1.0f);
+    vf.push_back(static_cast<Figure *>(d));
+
+    d = new Disk(vec3(0.0f, 1.0f, -1.25f), vec3(0.0f, 0.0f, 1.0f), 0.25f);
+    d->m_mat->m_diffuse = vec3(1.0f);
+    vf.push_back(static_cast<Figure *>(d));
+
+    d = new Disk(vec3(0.0f, 1.0f, -0.75f), vec3(0.0f, 0.0f, -1.0f), 0.25f);
+    d->m_mat->m_diffuse = vec3(1.0f);
+    vf.push_back(static_cast<Figure *>(d));
+
+    l = new PointLight();
+    l->m_position = vec3(0.0f, 0.9f, -1.0f);
+    l->m_diffuse = vec3(1.0f);
+    vl.push_back(static_cast<Light *>(l));
+  }
+
+  void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
+    Sphere * s;
+    Disk * d;
+    // SpotLight * l;
+    // DirectionalLight * l2;
+    vec3 eye = vec3(0.0f, 1.5f, 1.0f);
+    vec3 center = vec3(0.0f, 0.0f, -2.0f);
+    vec3 left = vec3(-1.0f, 0.0f, 0.0f);
+
+    e = new Environment("textures/pisa.hdr");
+    
+    c->m_eye = eye;
+    c->m_look = center;
+    c->m_up = cross(normalize(center - eye), left);
+    c->translate(vec3(1.0f, 0.0f, 0.0f));
+    //c->roll(15.0f);
+
+    // s = new Sphere(0.0f, -0.15f, -2.0f, 1.0f);
+    // s->m_mat->m_diffuse = vec3(1.0f, 0.5f, 0.0f);
+    // s->m_mat->m_specular = vec3(0.3f);
+    // s->m_mat->m_shininess = 5.0f;
+    // s->m_mat->m_rho = 0.4f;
+    // s->m_mat->m_refract = true;
+    // s->m_mat->m_ref_index = 1.33f;
+    // vf.push_back(static_cast<Figure *>(s));
+
+    // s = new Sphere(0.0f, -0.15f, -2.0f, 0.5f);
+    // s->m_mat->m_diffuse = vec3(0.0f);
+    // s->m_mat->m_specular = vec3(0.0f);
+    // s->m_mat->m_rho = 0.0f;
+    // s->m_mat->m_refract = true;
+    // s->m_mat->m_ref_index = 2.6f;
+    // vf.push_back(static_cast<Figure *>(s));
+
+    s = new Sphere(2.0f, 0.0f, -2.0f, 1.5f, new HeidrichSeidelAnisotropicBRDF(vec3(0.0f, 1.0f, 0.0f)));
+    s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+    s->m_mat->m_shininess = 128.0f;
+    vf.push_back(static_cast<Figure *>(s));
+
+    s = new Sphere(-1.0f, 0.0f, -3.25f, 1.5f);
+    s->m_mat->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
+    s->m_mat->m_rho = 0.4f;
+    vf.push_back(static_cast<Figure *>(s));
+
+    s = new Sphere(1.0f, 0.0f, -3.25f, 1.5f);
+    s->m_mat->m_diffuse = vec3(1.0f);
+    s->m_mat->m_rho = 0.4f;
+    vf.push_back(static_cast<Figure *>(s));
+    
+    d = new Disk(vec3(1.0f, -1.5f, -3.25f), vec3(0.0f, 1.0f, 0.0f), 3.0f);
+    d->m_mat->m_diffuse = vec3(0.0f, 0.5f, 0.5f);
+    d->m_mat->m_specular = vec3(0.0f);
+    vf.push_back(static_cast<Figure *>(d));
+    
+    // l = new SpotLight();
+    // l->m_position = normalize(vec3(-2.0f, 1.5f, -1.0f));
+    // l->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
+    // l->m_spot_dir = normalize(vec3(0.5f, 0.0f, -2.5f) - vec3(-2.0f, 1.5f, -1.0f));
+    // l->m_spot_cutoff = 89.0f;
+    // l->m_spot_exponent = 10.0f;
+    // vl.push_back(static_cast<Light *>(l));
+
+    // l2 = new DirectionalLight();
+    // l2->m_position = normalize(vec3(-1.0f, 0.7f, 1.0f));
+    // l2->m_diffuse = vec3(1.0f, 1.0f, 1.0f);
+    // vl.push_back(static_cast<Light *>(l2));
+
+    // l2 = new DirectionalLight();
+    // l2->m_position = normalize(vec3(-0.5f, 0.7f, 1.0f));
+    // l2->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
+    // l2->m_specular = vec3(0.0f, 0.0f, 1.0f);
+    // vl.push_back(static_cast<Light *>(l2));
+
+    // l = new DirectionalLight();
+    // l->m_position = normalize(vec3(1.0f, 0.0f, 1.0f));
+    // l->m_diffuse = vec3(0.5f);
+    // vl.push_back(static_cast<Light *>(l));
+  }
+
+  void scene_4(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
+    Sphere * s;
+    Plane * p;
+
+    e = new Environment("textures/pisa.hdr");
+    
+    s = new Sphere(0.0f, 0.0f, -2.0f, 1.0f);
+    s->m_mat->m_diffuse = vec3(1.0f);
+    s->m_mat->m_rho = 0.3f;
+    vf.push_back(static_cast<Figure *>(s));
+
+    p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
+    p->m_mat->m_diffuse = vec3(1.0f);
+    p->m_mat->m_specular = vec3(0.0f);
+    vf.push_back(static_cast<Figure *>(p));
+  }
+
+#+END_SRC
