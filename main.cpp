@@ -13,23 +13,10 @@
 
 #include "sampling.hpp"
 #include "scene.hpp"
-#include "camera.hpp"
 #include "ray.hpp"
-#include "figure.hpp"
-#include "sphere.hpp"
-#include "plane.hpp"
-#include "disk.hpp"
-#include "light.hpp"
-#include "directional_light.hpp"
-#include "point_light.hpp"
-#include "spot_light.hpp"
 #include "tracer.hpp"
 #include "path_tracer.hpp"
 #include "whitted_tracer.hpp"
-#include "brdf.hpp"
-#include "phong_brdf.hpp"
-#include "hsa_brdf.hpp"
-#include "environment.hpp"
 
 using namespace std;
 using namespace glm;
