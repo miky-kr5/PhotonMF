@@ -295,6 +295,8 @@ Material * Scene::read_material(Value & v) throw(SceneError) {
 	  mat = new Material(new PhongBRDF());
 	else if ((*it).value_.get_value<string>() == BRD_HSA_KEY)
 	  mat = new Material(new HeidrichSeidelAnisotropicBRDF(vec3(0.0f, 1.0f, 0.0f)));
+	else
+	  throw SceneError("Unrecognized BRDF in material.");
  
       } else
 	cerr << "Unrecognized key \"" << (*it).name_ << "\" in material." << endl;
