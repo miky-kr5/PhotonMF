@@ -81,6 +81,14 @@ static const string GEO_TRN_KEY = "translation";
 static const string GEO_SCL_KEY = "scaling";
 static const string GEO_ROT_KEY = "rotation";
 
+static const string LGT_DIR_KEY = "direction";
+static const string LGT_CAT_KEY = "const_attenuation";
+static const string LGT_LAT_KEY = "linear_attenuation";
+static const string LGT_QAT_KEY = "quad_attenuation";
+static const string LGT_SPD_KEY = "spot_direction";
+static const string LGT_SPC_KEY = "spot_cutoff";
+static const string LGT_SPE_KEY = "spot_exponent";
+
 Scene::Scene(const char * file_name, int h, int w, float fov) throw(SceneError) {
   ostringstream oss;
   ifstream ifs(file_name, ios::in);
@@ -120,13 +128,16 @@ Scene::Scene(const char * file_name, int h, int w, float fov) throw(SceneError) 
 	else if ((*it).name_ == DSK_KEY)
 	  m_figures.push_back(read_disk((*it).value_));
 
-	else if ((*it).name_ == DLT_KEY) {
+	else if ((*it).name_ == DLT_KEY)
+	  m_lights.push_back(read_light((*it).value_, DIRECTIONAL));
 
-	} else if ((*it).name_ == PLT_KEY) {
+	else if ((*it).name_ == PLT_KEY)
+	  m_lights.push_back(read_light((*it).value_, POINT));
 
-	} else if ((*it).name_ == SLT_KEY) {
+	else if ((*it).name_ == SLT_KEY)
+	  m_lights.push_back(read_light((*it).value_, SPOT));
 
-	} else
+	else
 	  cerr << "Unrecognized key \"" << (*it).name_ << "\" in the input file." << endl;
       }
     } catch (SceneError & e) {
@@ -438,4 +449,53 @@ Figure * Scene::read_disk(Value &v) throw(SceneError) {
     throw SceneError("Disk must specify a point, a normal vector and a radius.");
   
   return static_cast<Figure *>(new Disk(position, normal, radius, mat));
+}
+
+Light * Scene::read_light(Value & v, light_type_t t) throw(SceneError) {
+  vec3 position, diffuse = vec3(1.0f), specular = vec3(1.0f), spot_dir = vec3(0.0f, -1.0f, 0.0f);
+  float const_att = 1.0f, lin_att = 0.0f, quad_att = 0.0f, spot_cutoff = 45.0f, spot_exp = 0.0f;
+  Object lght_obj = v.get_value<Object>();
+
+  try {
+    for (Object::iterator it = lght_obj.begin(); it != lght_obj.end(); it++) {
+      if ((*it).name_ == FIG_POS_KEY || (*it).name_ == LGT_DIR_KEY)
+	read_vector((*it).value_, position);
+
+      else if((*it).name_ == MLT_DIF_KEY)
+	read_vector((*it).value_, diffuse);
+
+      else if((*it).name_ == MLT_SPC_KEY)
+	read_vector((*it).value_, specular);
+
+      else if((*it).name_ == LGT_SPD_KEY)
+	read_vector((*it).value_, spot_dir);
+
+      else if ((*it).name_ == LGT_CAT_KEY)
+	const_att = static_cast<float>((*it).value_.get_value<double>());
+
+      else if ((*it).name_ == LGT_LAT_KEY)
+	lin_att = static_cast<float>((*it).value_.get_value<double>());
+
+      else if ((*it).name_ == LGT_QAT_KEY)
+	quad_att = static_cast<float>((*it).value_.get_value<double>());
+
+      else if ((*it).name_ == LGT_SPC_KEY)
+	spot_cutoff = static_cast<float>((*it).value_.get_value<double>());
+
+      else if ((*it).name_ == LGT_SPE_KEY)
+	spot_exp = static_cast<float>((*it).value_.get_value<double>());
+    }
+  } catch (SceneError & e) {
+    throw e;
+  }
+  
+  if (t == DIRECTIONAL)
+    return static_cast<Light *>(new DirectionalLight(position, diffuse, specular));
+  else if (t == POINT)
+    return static_cast<Light *>(new PointLight(position, diffuse, specular, const_att, lin_att, quad_att));
+  else if (t == SPOT)
+    return static_cast<Light *>(new SpotLight(position, diffuse, specular, const_att, lin_att, quad_att, spot_cutoff, spot_exp, spot_dir));
+  else
+    throw SceneError("Unknown light type.");
+  return NULL;
 }

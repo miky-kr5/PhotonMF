@@ -1,4 +1,4 @@
-* Features [12/20]
+* Features [13/20]
 
  - [X] Perspective projection
  - [X] Ray-sphere intersection
@@ -18,7 +18,7 @@
  - [X] Phong shading
  - [X] Specular reflections
  - [X] Transmission
- - [ ] Scene description input files (JSON)
+ - [X] Scene description input files (JSON)
  - [X] Indirect illumination
  - [ ] Glossy reflections
  - [X] Image based lighting
@@ -106,79 +106,4 @@
     l->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
     vl.push_back(static_cast<Light *>(l));
   }
-
-  void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c) {
-    Sphere * s;
-    Plane * p;
-    Disk * d;
-    PointLight * l;
-    
-    s = new Sphere(0.2f, 0.0f, -0.75f, 0.25f);
-    s->m_mat->m_diffuse = vec3(1.0f);
-    s->m_mat->m_rho = 0.2f;
-    vf.push_back(static_cast<Figure *>(s));
-
-    p = new Plane(vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-    p->m_mat->m_diffuse = vec3(0.0f, 1.0f, 0.0f);
-    p->m_mat->m_specular = vec3(0.0f);
-    vf.push_back(static_cast<Figure *>(p));
-
-    p = new Plane(vec3(-2.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f));
-    p->m_mat->m_diffuse = vec3(1.0f, 0.0f, 0.0f);
-    p->m_mat->m_specular = vec3(0.0f);
-    vf.push_back(static_cast<Figure *>(p));
-
-    p = new Plane(vec3(2.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f));
-    p->m_mat->m_diffuse = vec3(0.0f, 0.0f, 1.0f);
-    p->m_mat->m_specular = vec3(0.0f);
-    vf.push_back(static_cast<Figure *>(p));
-
-    p = new Plane(vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f));
-    p->m_mat->m_diffuse = vec3(0.0f, 1.0f, 1.0f);
-    p->m_mat->m_specular = vec3(0.0f);
-    vf.push_back(static_cast<Figure *>(p));
-
-    p = new Plane(vec3(0.0f, 0.0f, -2.0f), vec3(0.0f, 0.0f, 1.0f));
-    p->m_mat->m_diffuse = vec3(1.0f, 0.0f, 1.0f);
-    p->m_mat->m_specular = vec3(0.0f);
-    vf.push_back(static_cast<Figure *>(p));
-
-    p = new Plane(vec3(0.0f, 0.0f, 1.1f), vec3(0.0f, 0.0f, -1.0f));
-    p->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-    p->m_mat->m_specular = vec3(0.0f);
-    vf.push_back(static_cast<Figure *>(p));
-
-    s = new Sphere(-0.5f, -0.5f, -1.5f, 0.5f);
-    s->m_mat->m_diffuse = vec3(0.0f);
-    s->m_mat->m_rho = 1.0f;
-    vf.push_back(static_cast<Figure *>(s));
-
-    s = new Sphere(-0.5f, -0.5f, 0.6f, 0.5f);
-    s->m_mat->m_diffuse = vec3(1.0f, 1.0f, 0.0f);
-    s->m_mat->m_refract = true;
-    s->m_mat->m_ref_index = 1.33f;
-    vf.push_back(static_cast<Figure *>(s));
-
-    d = new Disk(vec3(-0.25f, 1.0f, -1.0f), vec3(1.0f, 0.0f, 0.0f), 0.25f);
-    d->m_mat->m_diffuse = vec3(1.0f);
-    vf.push_back(static_cast<Figure *>(d));
-
-    d = new Disk(vec3(0.25f, 1.0f, -1.0f), vec3(-1.0f, 0.0f, 0.0f), 0.25f);
-    d->m_mat->m_diffuse = vec3(1.0f);
-    vf.push_back(static_cast<Figure *>(d));
-
-    d = new Disk(vec3(0.0f, 1.0f, -1.25f), vec3(0.0f, 0.0f, 1.0f), 0.25f);
-    d->m_mat->m_diffuse = vec3(1.0f);
-    vf.push_back(static_cast<Figure *>(d));
-
-    d = new Disk(vec3(0.0f, 1.0f, -0.75f), vec3(0.0f, 0.0f, -1.0f), 0.25f);
-    d->m_mat->m_diffuse = vec3(1.0f);
-    vf.push_back(static_cast<Figure *>(d));
-
-    l = new PointLight();
-    l->m_position = vec3(0.0f, 0.9f, -1.0f);
-    l->m_diffuse = vec3(1.0f);
-    vl.push_back(static_cast<Light *>(l));
-  }
-
 #+END_SRC

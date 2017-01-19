@@ -1,9 +1,12 @@
 {
+    "point_light":{
+	"position": [0.0, 0.9, -1.0]
+    },
+    
     "sphere": {
 	"position": [0.2, 0.0, -0.75],
 	"radius": 0.25,
 	"material": {
-	    "emission": [10.0, 10.0, 10.0],
 	    "diffuse": [1.0, 1.0, 1.0],
 	    "rho": 0.2
 	}

@@ -19,6 +19,8 @@ using std::vector;
 using std::runtime_error;
 using json_spirit::Value;
 
+typedef enum LIGHT_TYPE { DIRECTIONAL, POINT, SPOT } light_type_t;
+
 class SceneError: public runtime_error {
 public:
   explicit SceneError(const string & what_arg): runtime_error(what_arg) { }
@@ -39,9 +41,10 @@ private:
   void read_environment(Value & v) throw(SceneError);
   void read_camera(Value & v) throw(SceneError);
   Material * read_material(Value & v) throw(SceneError);
-  Figure * read_sphere(Value &v) throw(SceneError);
-  Figure * read_plane(Value &v) throw(SceneError);
-  Figure * read_disk(Value &v) throw(SceneError);
+  Figure * read_sphere(Value & v) throw(SceneError);
+  Figure * read_plane(Value & v) throw(SceneError);
+  Figure * read_disk(Value & v) throw(SceneError);
+  Light * read_light(Value & v, light_type_t t) throw(SceneError);
 };
 
 #endif
