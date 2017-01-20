@@ -34,6 +34,7 @@
 	"position": [1.0, 0.0, -3.25],
 	"radius": 1.5,
 	"material": {
+            "emission": [10.0, 10.0, 10.0],
 	    "diffuse": [1.0, 1.0, 1.0],
 	    "rho": 0.4
 	}
