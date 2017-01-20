@@ -33,18 +33,18 @@ public:
   Environment * m_env;
   Camera * m_cam;
 
-  Scene(const char * file_name, int h = 480, int w = 640, float fov = 90.0f) throw(SceneError);
+  Scene(const char * file_name, int h = 480, int w = 640, float fov = 90.0f);
   ~Scene();
 
 private:
-  void read_vector(Value & val, vec3 & vec) throw(SceneError);
-  void read_environment(Value & v) throw(SceneError);
-  void read_camera(Value & v) throw(SceneError);
-  Material * read_material(Value & v) throw(SceneError);
-  Figure * read_sphere(Value & v) throw(SceneError);
-  Figure * read_plane(Value & v) throw(SceneError);
-  Figure * read_disk(Value & v) throw(SceneError);
-  Light * read_light(Value & v, light_type_t t) throw(SceneError);
+  void read_vector(Value & val, vec3 & vec);
+  void read_environment(Value & v);
+  void read_camera(Value & v);
+  Material * read_material(Value & v);
+  Figure * read_sphere(Value & v);
+  Figure * read_plane(Value & v);
+  Figure * read_disk(Value & v);
+  Light * read_light(Value & v, light_type_t t);
 };
 
 #endif

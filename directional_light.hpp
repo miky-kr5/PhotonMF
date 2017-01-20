@@ -2,13 +2,17 @@
 #ifndef DIRECTIONAL_LIGHT_HPP
 #define DIRECTIONAL_LIGHT_HPP
 
+#include <glm/glm.hpp>
+
 #include "light.hpp"
+
+using glm::normalize;
 
 class DirectionalLight: public Light {
 public:
   DirectionalLight(): Light() { }
 
-  DirectionalLight(vec3 _p, vec3 _d, vec3 _s): Light(_p, _d, _s) { }
+  DirectionalLight(vec3 _p, vec3 _d, vec3 _s): Light(normalize(_p), _d, _s) { }
 
   virtual vec3 direction(vec3 point);
   virtual float distance(vec3 point);

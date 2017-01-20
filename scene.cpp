@@ -89,7 +89,7 @@ static const string LGT_SPD_KEY = "spot_direction";
 static const string LGT_SPC_KEY = "spot_cutoff";
 static const string LGT_SPE_KEY = "spot_exponent";
 
-Scene::Scene(const char * file_name, int h, int w, float fov) throw(SceneError) {
+Scene::Scene(const char * file_name, int h, int w, float fov) {
   ostringstream oss;
   ifstream ifs(file_name, ios::in);
   Value val;
@@ -142,6 +142,8 @@ Scene::Scene(const char * file_name, int h, int w, float fov) throw(SceneError) 
       }
     } catch (SceneError & e) {
       throw e;
+    } catch (runtime_error & r) {
+      throw SceneError("Type error in input file.");
     }
     
     // If there were no camera and/or environment defined, create some default ones.
@@ -169,7 +171,7 @@ Scene::~Scene() {
   m_lights.clear();
 }
 
-void Scene::read_vector(Value & val, vec3 & vec) throw(SceneError) {
+void Scene::read_vector(Value & val, vec3 & vec) {
   Array a = val.get_value<Array>();
 
   if (a.size() < 3)
@@ -178,7 +180,7 @@ void Scene::read_vector(Value & val, vec3 & vec) throw(SceneError) {
   vec = vec3(a[0].get_value<double>(), a[1].get_value<double>(), a[2].get_value<double>());
 }
 
-void Scene::read_environment(Value & v) throw(SceneError) {
+void Scene::read_environment(Value & v) {
   string t_name = "";
   bool l_probe = false, has_tex = false, has_color = false;
   vec3 color = vec3(1.0f);
@@ -211,47 +213,43 @@ void Scene::read_environment(Value & v) throw(SceneError) {
   m_env = new Environment(has_tex ? t_name.c_str() : NULL , l_probe, color);
 }
 
-void Scene::read_camera(Value & v) throw(SceneError) {
+void Scene::read_camera(Value & v) {
   bool has_up = false, has_left = false, has_eye = false, has_look = false;
   vec3 eye, look, left, up, translation;
   float pitch = 0.0f, yaw = 0.0f, roll = 0.0f;
   Object cam_obj = v.get_value<Object>();
 
-  try {
-    for (Object::iterator it = cam_obj.begin(); it != cam_obj.end(); it++) {
-      if ((*it).name_ == CAM_EYE_KEY) {
-	read_vector((*it).value_, eye);
-	has_eye = true;
+  for (Object::iterator it = cam_obj.begin(); it != cam_obj.end(); it++) {
+    if ((*it).name_ == CAM_EYE_KEY) {
+      read_vector((*it).value_, eye);
+      has_eye = true;
 
-      } else if ((*it).name_ == CAM_CNT_KEY) {
-	read_vector((*it).value_, look);
-	has_look = true;
+    } else if ((*it).name_ == CAM_CNT_KEY) {
+      read_vector((*it).value_, look);
+      has_look = true;
 
-      } else if ((*it).name_ == CAM_LFT_KEY) {
-	read_vector((*it).value_, left);
-	has_left = true;
+    } else if ((*it).name_ == CAM_LFT_KEY) {
+      read_vector((*it).value_, left);
+      has_left = true;
 
-      } else if ((*it).name_ == CAM_UPV_KEY) {
-	read_vector((*it).value_, up);
-	has_up = true;
+    } else if ((*it).name_ == CAM_UPV_KEY) {
+      read_vector((*it).value_, up);
+      has_up = true;
 
-      } else if ((*it).name_ == GEO_TRN_KEY)
-	read_vector((*it).value_, translation);
+    } else if ((*it).name_ == GEO_TRN_KEY)
+      read_vector((*it).value_, translation);
 
-      else if ((*it).name_ == CAM_RLL_KEY)
-	roll = static_cast<float>((*it).value_.get_value<double>());
+    else if ((*it).name_ == CAM_RLL_KEY)
+      roll = static_cast<float>((*it).value_.get_value<double>());
 
-      else if ((*it).name_ == CAM_PTC_KEY)
-	pitch = static_cast<float>((*it).value_.get_value<double>());
+    else if ((*it).name_ == CAM_PTC_KEY)
+      pitch = static_cast<float>((*it).value_.get_value<double>());
 
-      else if ((*it).name_ == CAM_YAW_KEY)
-	yaw = static_cast<float>((*it).value_.get_value<double>());
+    else if ((*it).name_ == CAM_YAW_KEY)
+      yaw = static_cast<float>((*it).value_.get_value<double>());
 	
-      else
-	cerr << "Unrecognized key \"" << (*it).name_ << "\" in camera." << endl;
-    }
-  } catch (SceneError & e) {
-    throw e;
+    else
+      cerr << "Unrecognized key \"" << (*it).name_ << "\" in camera." << endl;
   }
 
   if (!has_eye || !has_look)
@@ -271,49 +269,45 @@ void Scene::read_camera(Value & v) throw(SceneError) {
   m_cam->translate(translation);
 }
 
-Material * Scene::read_material(Value & v) throw(SceneError) {
+Material * Scene::read_material(Value & v) {
   vec3 emission = vec3(0.0f), diffuse = vec3(1.0f), specular = vec3(1.0f);
   bool transmissive = false;
   float rho = 0.0f, ref_index = 1.0f, shininess = 89.0f;
   Material * mat = NULL;
   Object mat_obj = v.get_value<Object>();
 
-  try {
-    for (Object::iterator it = mat_obj.begin(); it != mat_obj.end(); it++) {
-      if ((*it).name_ == MLT_EMS_KEY) {
-	read_vector((*it).value_, emission);
+  for (Object::iterator it = mat_obj.begin(); it != mat_obj.end(); it++) {
+    if ((*it).name_ == MLT_EMS_KEY) {
+      read_vector((*it).value_, emission);
 
-      } else if ((*it).name_ == MLT_DIF_KEY) {
-	read_vector((*it).value_, diffuse);
+    } else if ((*it).name_ == MLT_DIF_KEY) {
+      read_vector((*it).value_, diffuse);
 
-      } else if ((*it).name_ == MLT_SPC_KEY) {
-	read_vector((*it).value_, specular);
+    } else if ((*it).name_ == MLT_SPC_KEY) {
+      read_vector((*it).value_, specular);
 
-      } else if ((*it).name_ == MLT_RHO_KEY) {
-	rho = static_cast<float>((*it).value_.get_value<double>());
+    } else if ((*it).name_ == MLT_RHO_KEY) {
+      rho = static_cast<float>((*it).value_.get_value<double>());
 
-      } else if ((*it).name_ == MLT_SHN_KEY) {
-	shininess = static_cast<float>((*it).value_.get_value<double>());
+    } else if ((*it).name_ == MLT_SHN_KEY) {
+      shininess = static_cast<float>((*it).value_.get_value<double>());
 
-      } else if ((*it).name_ == MLT_RFI_KEY) {
-	ref_index = static_cast<float>((*it).value_.get_value<double>());
+    } else if ((*it).name_ == MLT_RFI_KEY) {
+      ref_index = static_cast<float>((*it).value_.get_value<double>());
 
-      } else if ((*it).name_ == MLT_BRF_KEY) {
-	transmissive = (*it).value_.get_value<bool>();
+    } else if ((*it).name_ == MLT_BRF_KEY) {
+      transmissive = (*it).value_.get_value<bool>();
 
-      } else if ((*it).name_ == MLT_BRD_KEY) {
-	if ((*it).value_.get_value<string>() == BRD_PHN_KEY)
-	  mat = new Material(new PhongBRDF());
-	else if ((*it).value_.get_value<string>() == BRD_HSA_KEY)
-	  mat = new Material(new HeidrichSeidelAnisotropicBRDF(vec3(0.0f, 1.0f, 0.0f)));
-	else
-	  throw SceneError("Unrecognized BRDF in material.");
+    } else if ((*it).name_ == MLT_BRD_KEY) {
+      if ((*it).value_.get_value<string>() == BRD_PHN_KEY)
+	mat = new Material(new PhongBRDF());
+      else if ((*it).value_.get_value<string>() == BRD_HSA_KEY)
+	mat = new Material(new HeidrichSeidelAnisotropicBRDF(vec3(0.0f, 1.0f, 0.0f)));
+      else
+	throw SceneError("Unrecognized BRDF in material.");
  
-      } else
-	cerr << "Unrecognized key \"" << (*it).name_ << "\" in material." << endl;
-    }
-  } catch(SceneError & e) {
-    throw e;
+    } else
+      cerr << "Unrecognized key \"" << (*it).name_ << "\" in material." << endl;
   }
 
   if (mat == NULL)
@@ -329,39 +323,35 @@ Material * Scene::read_material(Value & v) throw(SceneError) {
   return mat;
 }
 
-Figure * Scene::read_sphere(Value &v) throw(SceneError) {
+Figure * Scene::read_sphere(Value &v) {
   bool has_position = false, has_radius = false;
   vec3 position;
   float radius = 1.0f;
   Material * mat = NULL;
   Object sph_obj = v.get_value<Object>();
 
-  try {
-    for (Object::iterator it = sph_obj.begin(); it != sph_obj.end(); it++) {
-      if ((*it).name_ == FIG_POS_KEY) {
-	read_vector((*it).value_, position);
-	has_position = true;
+  for (Object::iterator it = sph_obj.begin(); it != sph_obj.end(); it++) {
+    if ((*it).name_ == FIG_POS_KEY) {
+      read_vector((*it).value_, position);
+      has_position = true;
 
-      } else if ((*it).name_ == FIG_MAT_KEY) {
-	try {
-	  mat = read_material((*it).value_);
-	} catch (SceneError & e) {
-	  throw e;
-	}
+    } else if ((*it).name_ == FIG_MAT_KEY) {
+      try {
+	mat = read_material((*it).value_);
+      } catch (SceneError & e) {
+	throw e;
+      }
 
-      } else if ((*it).name_ == FIG_RAD_KEY) {
-	radius = static_cast<float>((*it).value_.get_value<double>());
+    } else if ((*it).name_ == FIG_RAD_KEY) {
+      radius = static_cast<float>((*it).value_.get_value<double>());
 
-	if (radius <= 0.0f)
-	  throw SceneError("Sphere radius must be greater than 0.");
+      if (radius <= 0.0f)
+	throw SceneError("Sphere radius must be greater than 0.");
 
-	has_radius = true;
+      has_radius = true;
 
-      } else
-	cerr << "Unrecognized key \"" << (*it).name_ << "\" in sphere." << endl;
-    }
-  } catch (SceneError & e) {
-    throw e;
+    } else
+      cerr << "Unrecognized key \"" << (*it).name_ << "\" in sphere." << endl;
   }
 
   if (!has_position || !has_radius)
@@ -370,34 +360,30 @@ Figure * Scene::read_sphere(Value &v) throw(SceneError) {
   return static_cast<Figure *>(new Sphere(position, radius, mat));
 }
 
-Figure * Scene::read_plane(Value &v) throw(SceneError) {
+Figure * Scene::read_plane(Value &v) {
   bool has_position = false, has_normal = false;
   vec3 position, normal = vec3(0.0f, 1.0f, 0.0f);
   Material * mat = NULL;
   Object pln_obj = v.get_value<Object>();
 
-  try {
-    for (Object::iterator it = pln_obj.begin(); it != pln_obj.end(); it++) {
-      if ((*it).name_ == FIG_POS_KEY || (*it).name_ == PLN_PNT_KEY) {
-	read_vector((*it).value_, position);
-	has_position = true;
+  for (Object::iterator it = pln_obj.begin(); it != pln_obj.end(); it++) {
+    if ((*it).name_ == FIG_POS_KEY || (*it).name_ == PLN_PNT_KEY) {
+      read_vector((*it).value_, position);
+      has_position = true;
 
-      } else if ((*it).name_ == FIG_MAT_KEY) {
-	try {
-	  mat = read_material((*it).value_);
-	} catch (SceneError & e) {
-	  throw e;
-	}
+    } else if ((*it).name_ == FIG_MAT_KEY) {
+      try {
+	mat = read_material((*it).value_);
+      } catch (SceneError & e) {
+	throw e;
+      }
 
-      } else if ((*it).name_ == FIG_NOR_KEY) {
-	read_vector((*it).value_, normal);
-	has_normal = true;
+    } else if ((*it).name_ == FIG_NOR_KEY) {
+      read_vector((*it).value_, normal);
+      has_normal = true;
 
-      } else
-	cerr << "Unrecognized key \"" << (*it).name_ << "\" in plane." << endl;
-    }
-  } catch (SceneError & e) {
-    throw e;
+    } else
+      cerr << "Unrecognized key \"" << (*it).name_ << "\" in plane." << endl;
   }
 
   if (!has_position || !has_normal)
@@ -406,43 +392,39 @@ Figure * Scene::read_plane(Value &v) throw(SceneError) {
   return static_cast<Figure *>(new Plane(position, normal, mat));
 }
 
-Figure * Scene::read_disk(Value &v) throw(SceneError) {
+Figure * Scene::read_disk(Value &v) {
   bool has_position = false, has_normal = false, has_radius = false;
   vec3 position, normal = vec3(0.0f, 1.0f, 0.0f);
   float radius = 1.0f;
   Material * mat = NULL;
   Object dsk_obj = v.get_value<Object>();
 
-  try {
-    for (Object::iterator it = dsk_obj.begin(); it != dsk_obj.end(); it++) {
-      if ((*it).name_ == FIG_POS_KEY || (*it).name_ == PLN_PNT_KEY) {
-	read_vector((*it).value_, position);
-	has_position = true;
+  for (Object::iterator it = dsk_obj.begin(); it != dsk_obj.end(); it++) {
+    if ((*it).name_ == FIG_POS_KEY || (*it).name_ == PLN_PNT_KEY) {
+      read_vector((*it).value_, position);
+      has_position = true;
 
-      } else if ((*it).name_ == FIG_MAT_KEY) {
-	try {
-	  mat = read_material((*it).value_);
-	} catch (SceneError & e) {
-	  throw e;
-	}
+    } else if ((*it).name_ == FIG_MAT_KEY) {
+      try {
+	mat = read_material((*it).value_);
+      } catch (SceneError & e) {
+	throw e;
+      }
 
-      } else if ((*it).name_ == FIG_NOR_KEY) {
-	read_vector((*it).value_, normal);
-	has_normal = true;
+    } else if ((*it).name_ == FIG_NOR_KEY) {
+      read_vector((*it).value_, normal);
+      has_normal = true;
 
-      } else if ((*it).name_ == FIG_RAD_KEY) {
-	radius = static_cast<float>((*it).value_.get_value<double>());
+    } else if ((*it).name_ == FIG_RAD_KEY) {
+      radius = static_cast<float>((*it).value_.get_value<double>());
 
-	if (radius <= 0.0f)
-	  throw SceneError("Disk radius must be greater than 0.");
+      if (radius <= 0.0f)
+	throw SceneError("Disk radius must be greater than 0.");
 
-	has_radius = true;
+      has_radius = true;
       
-      } else
-	cerr << "Unrecognized key \"" << (*it).name_ << "\" in disk." << endl;
-    }
-  } catch (SceneError & e) {
-    throw e;
+    } else
+      cerr << "Unrecognized key \"" << (*it).name_ << "\" in disk." << endl;
   }
 
   if (!has_position || !has_normal || !has_radius)
@@ -451,42 +433,38 @@ Figure * Scene::read_disk(Value &v) throw(SceneError) {
   return static_cast<Figure *>(new Disk(position, normal, radius, mat));
 }
 
-Light * Scene::read_light(Value & v, light_type_t t) throw(SceneError) {
+Light * Scene::read_light(Value & v, light_type_t t) {
   vec3 position, diffuse = vec3(1.0f), specular = vec3(1.0f), spot_dir = vec3(0.0f, -1.0f, 0.0f);
   float const_att = 1.0f, lin_att = 0.0f, quad_att = 0.0f, spot_cutoff = 45.0f, spot_exp = 0.0f;
   Object lght_obj = v.get_value<Object>();
 
-  try {
-    for (Object::iterator it = lght_obj.begin(); it != lght_obj.end(); it++) {
-      if ((*it).name_ == FIG_POS_KEY || (*it).name_ == LGT_DIR_KEY)
-	read_vector((*it).value_, position);
+  for (Object::iterator it = lght_obj.begin(); it != lght_obj.end(); it++) {
+    if ((*it).name_ == FIG_POS_KEY || (*it).name_ == LGT_DIR_KEY)
+      read_vector((*it).value_, position);
 
-      else if((*it).name_ == MLT_DIF_KEY)
-	read_vector((*it).value_, diffuse);
+    else if((*it).name_ == MLT_DIF_KEY)
+      read_vector((*it).value_, diffuse);
 
-      else if((*it).name_ == MLT_SPC_KEY)
-	read_vector((*it).value_, specular);
+    else if((*it).name_ == MLT_SPC_KEY)
+      read_vector((*it).value_, specular);
 
-      else if((*it).name_ == LGT_SPD_KEY)
-	read_vector((*it).value_, spot_dir);
+    else if((*it).name_ == LGT_SPD_KEY)
+      read_vector((*it).value_, spot_dir);
 
-      else if ((*it).name_ == LGT_CAT_KEY)
-	const_att = static_cast<float>((*it).value_.get_value<double>());
+    else if ((*it).name_ == LGT_CAT_KEY)
+      const_att = static_cast<float>((*it).value_.get_value<double>());
 
-      else if ((*it).name_ == LGT_LAT_KEY)
-	lin_att = static_cast<float>((*it).value_.get_value<double>());
+    else if ((*it).name_ == LGT_LAT_KEY)
+      lin_att = static_cast<float>((*it).value_.get_value<double>());
 
-      else if ((*it).name_ == LGT_QAT_KEY)
-	quad_att = static_cast<float>((*it).value_.get_value<double>());
+    else if ((*it).name_ == LGT_QAT_KEY)
+      quad_att = static_cast<float>((*it).value_.get_value<double>());
 
-      else if ((*it).name_ == LGT_SPC_KEY)
-	spot_cutoff = static_cast<float>((*it).value_.get_value<double>());
+    else if ((*it).name_ == LGT_SPC_KEY)
+      spot_cutoff = static_cast<float>((*it).value_.get_value<double>());
 
-      else if ((*it).name_ == LGT_SPE_KEY)
-	spot_exp = static_cast<float>((*it).value_.get_value<double>());
-    }
-  } catch (SceneError & e) {
-    throw e;
+    else if ((*it).name_ == LGT_SPE_KEY)
+      spot_exp = static_cast<float>((*it).value_.get_value<double>());
   }
   
   if (t == DIRECTIONAL)

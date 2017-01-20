@@ -30,10 +30,6 @@ using namespace glm;
 ////////////////////////////////////////////
 // Function prototypes.
 ////////////////////////////////////////////
-// static void scene_1(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
-// static void scene_2(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
-// static void scene_3(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
-// static void scene_4(vector<Figure *> & vf, vector<Light *> & vl, Environment * & e, Camera * c);
 static void print_usage(char ** const argv);
 static void parse_args(int argc, char ** const argv);
 
@@ -143,27 +139,50 @@ int main(int argc, char ** argv) {
   cout << endl;
 
   // Copy the pixels to the output bitmap.
-  cout << "Saving output image." << endl;
-  input_bitmap = FreeImage_AllocateT(FIT_RGBF, g_w, g_h, 96);
-  pitch = FreeImage_GetPitch(input_bitmap);
-  bits = (BYTE*)FreeImage_GetBits(input_bitmap);
-  for (unsigned int y = 0; y < FreeImage_GetHeight(input_bitmap); y++) {
-    pixel = (FIRGBF*)bits;
-    for (unsigned int x = 0; x < FreeImage_GetWidth(input_bitmap); x++) {
-      pixel[x].red = image[g_h - 1 - y][x].r;
-      pixel[x].green = image[g_h - 1 - y][x].g;
-      pixel[x].blue = image[g_h - 1 - y][x].b;
+  if (g_tracer == MONTE_CARLO || g_tracer == JENSEN) {
+    cout << "Saving output image." << endl;
+    input_bitmap = FreeImage_AllocateT(FIT_RGBF, g_w, g_h, 96);
+    pitch = FreeImage_GetPitch(input_bitmap);
+    bits = (BYTE *)FreeImage_GetBits(input_bitmap);
+    for (unsigned int y = 0; y < FreeImage_GetHeight(input_bitmap); y++) {
+      pixel = (FIRGBF *)bits;
+      for (unsigned int x = 0; x < FreeImage_GetWidth(input_bitmap); x++) {
+	pixel[x].red = image[g_h - 1 - y][x].r;
+	pixel[x].green = image[g_h - 1 - y][x].g;
+	pixel[x].blue = image[g_h - 1 - y][x].b;
+      }
+      bits += pitch;
     }
-    bits += pitch;
-  }
 
-  output_bitmap = FreeImage_ToneMapping(input_bitmap, FITMO_DRAGO03, g_gamma, g_exposure);
-  
-  // Save the output image.
-  fif = FreeImage_GetFIFFromFilename(g_out_file_name != NULL ? g_out_file_name : OUT_FILE);
-  FreeImage_Save(fif, output_bitmap, g_out_file_name != NULL ? g_out_file_name : OUT_FILE);
-  FreeImage_Unload(input_bitmap);
-  FreeImage_Unload(output_bitmap);
+    output_bitmap = FreeImage_ToneMapping(input_bitmap, FITMO_DRAGO03, g_gamma, g_exposure);
+
+    // Save the output image.
+    fif = FreeImage_GetFIFFromFilename(g_out_file_name != NULL ? g_out_file_name : OUT_FILE);
+    FreeImage_Save(fif, output_bitmap, g_out_file_name != NULL ? g_out_file_name : OUT_FILE);
+    FreeImage_Unload(input_bitmap);
+    FreeImage_Unload(output_bitmap);
+    
+  } else {
+    input_bitmap = FreeImage_Allocate(g_w, g_h, 24, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK);
+    pitch = FreeImage_GetLine(input_bitmap) / FreeImage_GetWidth(input_bitmap);
+    bits = (BYTE *)FreeImage_GetBits(input_bitmap);
+    for (unsigned int y = 0; y < FreeImage_GetHeight(input_bitmap); y++) {
+      bits = FreeImage_GetScanLine(input_bitmap, y);
+      for (unsigned int x = 0; x < FreeImage_GetWidth(input_bitmap); x++) {
+	bits[FI_RGBA_RED] = static_cast<BYTE>(image[g_h - 1 - y][x].r * 255.0f);
+	bits[FI_RGBA_GREEN] = static_cast<BYTE>(image[g_h - 1 - y][x].g * 255.0f);
+	bits[FI_RGBA_BLUE] = static_cast<BYTE>(image[g_h - 1 - y][x].b * 255.0f);
+	bits += pitch;
+      }
+    }
+
+    FreeImage_AdjustGamma(input_bitmap, g_gamma);
+
+    // Save the output image.
+    fif = FreeImage_GetFIFFromFilename(g_out_file_name != NULL ? g_out_file_name : OUT_FILE);
+    FreeImage_Save(fif, input_bitmap, g_out_file_name != NULL ? g_out_file_name : OUT_FILE);
+    FreeImage_Unload(input_bitmap);
+  }
 
   // Clean up.
   if (g_out_file_name != NULL)

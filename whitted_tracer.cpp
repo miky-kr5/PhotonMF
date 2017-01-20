@@ -85,8 +85,8 @@ vec3 WhittedTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const 
     }
 
     // Return final color.
-    return _f->m_mat->m_emission + color;
+    return clamp(_f->m_mat->m_emission + color, 0.0f, 1.0f);
 
   } else
-    return s->m_env->get_color(r);
+    return clamp(s->m_env->get_color(r), 0.0f, 1.0f);
 }
