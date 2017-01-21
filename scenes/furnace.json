@@ -1,0 +1,13 @@
+{
+    "environment": {
+	"color": [1.0, 1.0, 1.0]
+    },
+
+    "sphere": {
+	"position": [0.0, 0.0, -1.0],
+	"radius": 1.0,
+	"material": {
+	    "diffuse": [0.5, 0.5, 0.5],
+	}
+    }
+}
