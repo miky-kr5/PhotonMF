@@ -36,18 +36,24 @@ vec3 WhittedTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const 
     
     // Check if the material is not reflective/refractive.
     if (!_f->m_mat->m_refract) {
+
       // Calculate the direct lighting.
       for (size_t l = 0; l < s->m_lights.size(); l++) {
 	// For every light source
 	vis = true;
 
-	// Cast a shadow ray to determine visibility.
-	sr = Ray(s->m_lights[l]->direction(i_pos), i_pos + n * BIAS);
-	for (size_t f = 0; f < s->m_figures.size(); f++) {
-	  if (s->m_figures[f]->intersect(sr, _t) && _t < s->m_lights[l]->distance(i_pos)) {
-	    vis = false;
-	    break;
+	if (s->m_lights[l]->light_type() == Light::INFINITESIMAL) {
+	  // Cast a shadow ray to determine visibility.
+	  sr = Ray(s->m_lights[l]->direction(i_pos), i_pos + n * BIAS);
+	  for (size_t f = 0; f < s->m_figures.size(); f++) {
+	    if (s->m_figures[f]->intersect(sr, _t) && _t < s->m_lights[l]->distance(i_pos)) {
+	      vis = false;
+	      break;
+	    }
 	  }
+	} else if (s->m_lights[l]->light_type() == Light::AREA) {
+	  // Area lights not supported with Whitted ray tracing.
+	  vis = false;
 	}
 
 	// Evaluate the shading model accounting for visibility.

@@ -1,0 +1,5 @@
+-ansi
+-pedantic
+-Wall
+-DGLM_FORCE_RADIANS
+-fopenmp

@@ -8,11 +8,11 @@
 
 using glm::normalize;
 
-class DirectionalLight: public Light {
+class DirectionalLight: public InfinitesimalLight {
 public:
-  DirectionalLight(): Light() { }
+  DirectionalLight(): InfinitesimalLight() { }
 
-  DirectionalLight(vec3 _p, vec3 _d, vec3 _s): Light(normalize(_p), _d, _s) { }
+  DirectionalLight(vec3 _p, vec3 _d, vec3 _s): InfinitesimalLight(normalize(_p), _d, _s) { }
 
   virtual vec3 direction(vec3 point);
   virtual float distance(vec3 point);

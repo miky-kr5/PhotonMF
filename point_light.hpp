@@ -4,15 +4,15 @@
 
 #include "light.hpp"
 
-class PointLight: public Light {
+class PointLight: public InfinitesimalLight {
 public:
   float m_const_att;
   float m_lin_att;
   float m_quad_att;
 
-  PointLight(): Light(), m_const_att(1.0f), m_lin_att(0.0f), m_quad_att(0.0f) { }
+  PointLight(): InfinitesimalLight(), m_const_att(1.0f), m_lin_att(0.0f), m_quad_att(0.0f) { }
 
-  PointLight(vec3 _p, vec3 _d, vec3 _s, float _c, float _l, float _q): Light(_p, _d, _s), m_const_att(_c), m_lin_att(_l), m_quad_att(_q) { }
+  PointLight(vec3 _p, vec3 _d, vec3 _s, float _c, float _l, float _q): InfinitesimalLight(_p, _d, _s), m_const_att(_c), m_lin_att(_l), m_quad_att(_q) { }
 
   virtual vec3 direction(vec3 point);
   virtual float distance(vec3 point);
