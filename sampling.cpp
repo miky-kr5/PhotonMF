@@ -14,7 +14,7 @@ using glm::pi;
 
 const float PDF = (1.0f / (2.0f * pi<float>()));
 
-inline float random01() {
+float random01() {
   return static_cast<float>(rand() % 1024) / 1025.0f;
 }
 
