@@ -14,8 +14,8 @@ using glm::pi;
 
 const float PDF = (1.0f / (2.0f * pi<float>()));
 
-float random01() {
-  return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+inline float random01() {
+  return static_cast<float>(rand() % 1024) / 1025.0f;
 }
 
 vec2 sample_pixel(int i, int j, float w, float h, float a_ratio, float fov) {
@@ -49,7 +49,7 @@ vec3 sample_hemisphere(const float r1, float r2) {
   return vec3(x, r1, z);
 }
 
-void rotate_sample(vec3 & sample, vec3 & n) {
+void rotate_sample(vec3 & sample, const vec3 & n) {
   vec3 nt, nb;
   mat3 rot_m;
 

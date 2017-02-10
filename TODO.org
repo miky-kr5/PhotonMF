@@ -12,8 +12,8 @@
  - [X] Directional lights
  - [X] Point lights
  - [X] Spotlights
- - [ ] Area lights
-   - [ ] Sphere lights
+ - [-] Area lights
+   - [X] Sphere lights
    - [ ] Box/planar lights
  - [X] Phong shading
  - [X] Specular reflections

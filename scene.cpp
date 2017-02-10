@@ -18,6 +18,8 @@
 #include "directional_light.hpp"
 #include "point_light.hpp"
 #include "spot_light.hpp"
+#include "sphere_area_light.hpp"
+#include "disk_area_light.hpp"
 
 using std::cerr;
 using std::endl;
@@ -44,6 +46,7 @@ static const string DLT_KEY = "directional_light";
 static const string PLT_KEY = "point_light";
 static const string SLT_KEY = "spot_light";
 static const string SAL_KEY = "sphere_area_light";
+static const string DAL_KEY = "disk_area_light";
 static const string PAL_KEY = "planar_area_light";
 
 static const string ENV_TEX_KEY = "texture";
@@ -136,6 +139,12 @@ Scene::Scene(const char * file_name, int h, int w, float fov) {
 
 	else if ((*it).name_ == SLT_KEY)
 	  m_lights.push_back(read_light((*it).value_, SPOT));
+
+	else if((*it).name_ == SAL_KEY)
+	  m_lights.push_back(read_area_light((*it).value_, SPHERE));
+
+	else if((*it).name_ == DAL_KEY)
+	  m_lights.push_back(read_area_light((*it).value_, DISK));
 
 	else
 	  cerr << "Unrecognized key \"" << (*it).name_ << "\" in the input file." << endl;
@@ -475,5 +484,31 @@ Light * Scene::read_light(Value & v, light_type_t t) {
     return static_cast<Light *>(new SpotLight(position, diffuse, specular, const_att, lin_att, quad_att, spot_cutoff, spot_exp, spot_dir));
   else
     throw SceneError("Unknown light type.");
+
   return NULL;
+}
+
+Light * Scene::read_area_light(Value & v, light_type_t t) {
+  Disk * d;
+  Sphere * s;
+  DiskAreaLight * dal;
+  SphereAreaLight * sal;
+  Light * l;
+
+  if (t == SPHERE) {
+    s = static_cast<Sphere *>(read_sphere(v));
+    sal = new SphereAreaLight(s);
+    m_figures.push_back(static_cast<Figure *>(s));
+    l = static_cast<Light *>(sal);
+
+  } else if (t == DISK) {
+    d = static_cast<Disk *>(read_disk(v));
+    dal = new DiskAreaLight(d);
+    m_figures.push_back(static_cast<Figure *>(d));
+    l = static_cast<Light *>(dal);
+
+  } else
+    throw SceneError("Unknown area light type");
+
+  return l;
 }

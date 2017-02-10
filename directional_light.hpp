@@ -14,8 +14,8 @@ public:
 
   DirectionalLight(vec3 _p, vec3 _d, vec3 _s): InfinitesimalLight(normalize(_p), _d, _s) { }
 
-  virtual vec3 direction(vec3 point);
-  virtual float distance(vec3 point);
+  virtual vec3 direction(vec3 point) const;
+  virtual float distance(vec3 point) const;
   virtual vec3 diffuse(vec3 normal, Ray & r, vec3 i_pos, Material & m) const;
   virtual vec3 specular(vec3 normal, Ray & r, vec3 i_pos, Material & m) const;
 };

@@ -19,8 +19,6 @@ using std::vector;
 using std::runtime_error;
 using json_spirit::Value;
 
-typedef enum LIGHT_TYPE { DIRECTIONAL, POINT, SPOT } light_type_t;
-
 class SceneError: public runtime_error {
 public:
   explicit SceneError(const string & what_arg): runtime_error(what_arg) { }
@@ -28,6 +26,8 @@ public:
 
 class Scene {
 public:
+  typedef enum LIGHT_TYPE { DIRECTIONAL, POINT, SPOT, SPHERE, DISK, PLANE } light_type_t;
+
   vector<Figure *> m_figures;
   vector<Light *> m_lights;
   Environment * m_env;
@@ -45,6 +45,7 @@ private:
   Figure * read_plane(Value & v);
   Figure * read_disk(Value & v);
   Light * read_light(Value & v, light_type_t t);
+  Light * read_area_light(Value & v, light_type_t t);
 };
 
 #endif

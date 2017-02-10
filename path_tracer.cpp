@@ -15,8 +15,9 @@ vec3 PathTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
   Figure * _f;
   vec3 n, color, i_pos, ref, sample, dir_diff_color, dir_spec_color, ind_color, amb_color;
   Ray mv_r, sr, rr;
-  bool vis;
+  bool vis, is_area_light = false;
   float kr, r1, r2;
+  AreaLight * al;
 
   t = numeric_limits<float>::max();
   _f = NULL;
@@ -35,8 +36,19 @@ vec3 PathTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
     i_pos = r.m_origin + (t * r.m_direction);
     n = _f->normal_at_int(r, t);
 
+    is_area_light = false;
+    // Check if the object is an area light;
+    for (vector<Light *>::iterator it = s->m_lights.begin(); it != s->m_lights.end(); it++) {
+      if ((*it)->light_type() == Light::AREA && static_cast<AreaLight *>(*it)->m_figure == _f)
+	is_area_light = true;
+    }
+
+    // If the object is an area light, return it's emission value.
+    if (is_area_light) {
+      return _f->m_mat->m_emission;
+
     // Check if the material is not reflective/refractive.
-    if (!_f->m_mat->m_refract) {
+    } else if (!_f->m_mat->m_refract) {
       // Calculate the direct lighting.
       for (size_t l = 0; l < s->m_lights.size(); l++) {
 	// For every light source
@@ -44,21 +56,39 @@ vec3 PathTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 
 	if (s->m_lights[l]->light_type() == Light::INFINITESIMAL) {
 	  // Cast a shadow ray to determine visibility.
-	  sr = Ray(s->m_lights[l]->direction(i_pos), i_pos + n * BIAS);
+	  sr = Ray(s->m_lights[l]->direction(i_pos), i_pos + (n * BIAS));
+
 	  for (size_t f = 0; f < s->m_figures.size(); f++) {
 	    if (s->m_figures[f]->intersect(sr, _t) && _t < s->m_lights[l]->distance(i_pos)) {
 	      vis = false;
 	      break;
 	    }
 	  }
-	} else if (s->m_lights[l]->light_type() == Light::AREA) {
-	  // Area lights not supported with Whitted ray tracing.
-	  vis = false;
-	}
 
 	// Evaluate the shading model accounting for visibility.
 	dir_diff_color += vis ? s->m_lights[l]->diffuse(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
 	dir_spec_color += vis ? s->m_lights[l]->specular(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
+
+	} else if (s->m_lights[l]->light_type() == Light::AREA) {
+	  // Cast a shadow ray towards a sample point on the surface of the light source.
+	  al = static_cast<AreaLight *>(s->m_lights[l]);
+	  al->sample_at_surface(i_pos);
+	  sr = Ray(al->direction(i_pos), i_pos + (n * BIAS));
+
+	  for (size_t f = 0; f < s->m_figures.size(); f++) {
+	    // Avoid self-intersection with the light source.
+	    if (al->m_figure != s->m_figures[f]) {
+	      if (s->m_figures[f]->intersect(sr, _t) && _t < al->distance(i_pos)) {
+		vis = false;
+		break;
+	      }
+	    }
+	  }
+
+	  // Evaluate the shading model accounting for visibility.
+	  dir_diff_color += vis ? s->m_lights[l]->diffuse(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
+	  dir_spec_color += vis ? s->m_lights[l]->specular(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
+	}
       }
 
       // Calculate indirect lighting contribution.

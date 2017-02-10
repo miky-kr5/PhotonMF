@@ -12,11 +12,11 @@ using glm::dot;
 using glm::pow;
 using glm::max;
 
-inline vec3 DirectionalLight::direction(vec3 point) {
+vec3 DirectionalLight::direction(vec3 point) const {
   return m_position;
 }
 
-inline float DirectionalLight::distance(vec3 point) {
+float DirectionalLight::distance(vec3 point) const {
   return numeric_limits<float>::max();
 }
 

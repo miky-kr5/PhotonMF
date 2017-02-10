@@ -1,3 +1,4 @@
+#include <iostream>
 #include <limits>
 
 #include <glm/gtc/constants.hpp>
@@ -14,8 +15,9 @@ vec3 WhittedTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const 
   Figure * _f;
   vec3 n, color, i_pos, ref, dir_diff_color, dir_spec_color;
   Ray mv_r, sr, rr;
-  bool vis;
+  bool vis, is_area_light;
   float kr;
+  AreaLight * al;
 
   t = numeric_limits<float>::max();
   _f = NULL;
@@ -34,8 +36,19 @@ vec3 WhittedTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const 
     i_pos = r.m_origin + (t * r.m_direction);
     n = _f->normal_at_int(r, t);
     
+    is_area_light = false;
+    // Check if the object is an area light;
+    for (size_t l = 0; l < s->m_lights.size(); l++) {
+      if (s->m_lights[l]->light_type() == Light::AREA && static_cast<AreaLight *>(s->m_lights[l])->m_figure == _f)
+	is_area_light = true;
+    }
+
+    // If the object is an area light, return it's emission value.
+    if (is_area_light) {
+      return clamp(_f->m_mat->m_emission, 0.0f, 1.0f);
+
     // Check if the material is not reflective/refractive.
-    if (!_f->m_mat->m_refract) {
+    } else if (!_f->m_mat->m_refract) {
 
       // Calculate the direct lighting.
       for (size_t l = 0; l < s->m_lights.size(); l++) {
@@ -51,9 +64,22 @@ vec3 WhittedTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const 
 	      break;
 	    }
 	  }
+
 	} else if (s->m_lights[l]->light_type() == Light::AREA) {
-	  // Area lights not supported with Whitted ray tracing.
-	  vis = false;
+	  // Cast a shadow ray towards a sample point on the surface of the light source.
+	  al = static_cast<AreaLight *>(s->m_lights[l]);
+	  al->sample_at_surface(i_pos);
+	  sr = Ray(al->direction(i_pos), i_pos + (n * BIAS));
+
+	  for (size_t f = 0; f < s->m_figures.size(); f++) {
+	    // Avoid self-intersection with the light source.
+	    if (al->m_figure != s->m_figures[f]) {
+	      if (s->m_figures[f]->intersect(sr, _t) && _t < al->distance(i_pos)) {
+		vis = false;
+		break;
+	      }
+	    }
+	  }
 	}
 
 	// Evaluate the shading model accounting for visibility.

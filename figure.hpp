@@ -13,7 +13,7 @@ class Figure {
 public:
   Material * m_mat;
 
-  Figure(Material * mat = NULL) {
+  Figure(Material * mat = NULL): m_inv_area(0.0f) {
     m_mat = mat == NULL ? new Material() : mat;
   }
   
@@ -21,8 +21,18 @@ public:
     delete m_mat;
   }
 
+  virtual float pdf() const {
+    return m_inv_area;
+  }
+
   virtual bool intersect(Ray & r, float & t) const = 0;
   virtual vec3 normal_at_int(Ray & r, float & t) const = 0;
+  virtual vec3 sample_at_surface() const = 0;
+
+protected:
+  float m_inv_area;
+
+  virtual void calculate_inv_area() = 0;
 };
 
 #endif

@@ -17,10 +17,20 @@ public:
 
   SpotLight(): PointLight(), m_spot_cutoff(45.0f), m_spot_exponent(0.0f), m_spot_dir(vec3(0.0f, -1.0f, 0.0f)) { }
 
-  SpotLight(vec3 _p, vec3 _d, vec3 _s, float _c, float _l, float _q, float _sco, float _se, vec3 _sd): PointLight(_p, _d, _s, _c, _l, _q),
-												       m_spot_cutoff(_sco),
-												       m_spot_exponent(_se),
-												       m_spot_dir(normalize(_sd)) { }
+  SpotLight(vec3 _p,
+	    vec3 _d,
+	    vec3 _s,
+	    float _c,
+	    float _l,
+	    float _q,
+	    float _sco,
+	    float _se,
+	    vec3 _sd):
+    PointLight(_p, _d, _s, _c, _l, _q),
+    m_spot_cutoff(_sco),
+    m_spot_exponent(_se),
+    m_spot_dir(normalize(_sd))
+  { }
 
   virtual vec3 diffuse(vec3 normal, Ray & r, vec3 i_pos, Material & m) const;
   virtual vec3 specular(vec3 normal, Ray & r, vec3 i_pos, Material & m) const;
