@@ -10,7 +10,7 @@ vec3 SphereAreaLight::diffuse(vec3 normal, Ray & r, vec3 i_pos, Material & m) co
   vec3 l_dir, ref;
 
   l_dir = normalize(direction(i_pos));
-  ln_dot_d = dot(-m_n_at_last_sample, l_dir);
+  ln_dot_d = dot(m_n_at_last_sample, l_dir);
   if (ln_dot_d > 0.0f) {
     d2 = glm::distance(m_last_sample, i_pos);
     d2 *= d2;
@@ -28,7 +28,7 @@ vec3 SphereAreaLight::specular(vec3 normal, Ray & r, vec3 i_pos, Material & m) c
   vec3 l_dir, ref;
 
   l_dir = normalize(direction(i_pos));
-  ln_dot_d = dot(-m_n_at_last_sample, l_dir);
+  ln_dot_d = dot(m_n_at_last_sample, l_dir);
   if (ln_dot_d > 0.0f) {
     d = distance(i_pos);
     att = 1.0f / (m_const_att + (m_lin_att * d) + (m_quad_att * (d * d)));

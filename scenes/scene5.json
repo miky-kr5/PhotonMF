@@ -13,8 +13,9 @@
 	}
     },
 
-    "sphere_area_light": {
+    "disk_area_light": {
 	"position": [0.0, 1.0, -2.0],
+	"normal": [0.0, -1.0, -2.0],
 	"radius": 0.15,
 	"material": {
 	    "emission": [1.0, 1.0, 1.0]
