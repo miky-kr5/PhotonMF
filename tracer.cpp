@@ -12,8 +12,9 @@ float Tracer::fresnel(const vec3 & i, const vec3 & n, const float ir1, const flo
   float cos_t1 = dot(i, n);
   float cos_t2 = dot(normalize(refract(i, n, ir1 / ir2)), n);
   float cos_t2s = (cos_t2 * cos_t2);
-  cos_t2s = cos_t2s > 1.0f ? 1.0 : cos_t2s;
-  float sin_t2 = (ir1 / ir2) * glm::sqrt(1.0f - cos_t2s);
+  float omcos_t2s = 1.0f - cos_t2s;
+  omcos_t2s = omcos_t2s < 0.0f ? 0.0f : omcos_t2s;
+  float sin_t2 = (ir1 / ir2) * glm::sqrt(omcos_t2s);
 
   if (sin_t2 >= 1.0f)
     return 1.0f;
