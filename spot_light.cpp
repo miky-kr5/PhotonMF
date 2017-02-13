@@ -17,7 +17,7 @@ vec3 SpotLight::diffuse(vec3 normal, Ray & r, vec3 i_pos, Material & m) const {
   float d, att, spot_effect;
   vec3 l_dir, ref;
 
-  l_dir = normalize(direction(i_pos));
+  l_dir = direction(i_pos);
   d = distance(i_pos);
   spot_effect = dot(m_spot_dir, -l_dir);
   
@@ -34,7 +34,7 @@ vec3 SpotLight::specular(vec3 normal, Ray & r, vec3 i_pos, Material & m) const {
   float d, att, spot_effect;
   vec3 l_dir, ref;
 
-  l_dir = normalize(direction(i_pos));
+  l_dir = direction(i_pos);
   d = distance(i_pos);
   spot_effect = dot(m_spot_dir, -l_dir);
 

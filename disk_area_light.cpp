@@ -14,7 +14,7 @@ float d, att, ln_dot_d, d2, g;
   l_dir = normalize(direction(i_pos));
   ln_dot_d = dot(-m_n_at_last_sample, l_dir);
   if (ln_dot_d > 0.0f) {
-    d2 = glm::distance(m_last_sample, i_pos);
+    d2 = distance(i_pos);
     d2 *= d2;
     g = ln_dot_d / d2;
     d = distance(i_pos);

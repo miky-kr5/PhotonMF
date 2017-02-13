@@ -23,7 +23,7 @@ vec3 PointLight::diffuse(vec3 normal, Ray & r, vec3 i_pos, Material & m) const {
   float d, att;
   vec3 l_dir, ref;
 
-  l_dir = normalize(direction(i_pos));
+  l_dir = direction(i_pos);
   d = distance(i_pos);
   att = 1.0f / (m_const_att + (m_lin_att * d) + (m_quad_att * (d * d)));
 
@@ -34,7 +34,7 @@ vec3 PointLight::specular(vec3 normal, Ray & r, vec3 i_pos, Material & m) const 
   float d, att;
   vec3 l_dir, ref;
 
-  l_dir = normalize(direction(i_pos));
+  l_dir = direction(i_pos);
   d = distance(i_pos);
   att = 1.0f / (m_const_att + (m_lin_att * d) + (m_quad_att * (d * d)));
 

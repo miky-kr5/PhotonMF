@@ -10,6 +10,7 @@
 
 using glm::vec3;
 using glm::length;
+using glm::normalize;
 
 class Light {
 public:
@@ -61,7 +62,7 @@ public:
   AreaLight(Figure * _f): Light(AREA), m_figure(_f), m_last_sample(vec3()), m_n_at_last_sample(vec3()) { }
 
   virtual vec3 direction(vec3 point) const {
-    return m_last_sample - point;
+    return normalize(m_last_sample - point);
   }
 
   virtual float distance(vec3 point) const {
