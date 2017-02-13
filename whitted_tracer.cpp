@@ -4,6 +4,7 @@
 #include <glm/gtc/constants.hpp>
 
 #include "whitted_tracer.hpp"
+#include "area_light.hpp"
 
 using std::numeric_limits;
 using namespace glm;

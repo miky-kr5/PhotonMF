@@ -9,8 +9,6 @@
 #include "ray.hpp"
 
 using glm::vec3;
-using glm::length;
-using glm::normalize;
 
 class Light {
 public:
@@ -51,31 +49,6 @@ public:
   virtual float distance(vec3 point) const = 0;
   virtual vec3 diffuse(vec3 normal, Ray & r, vec3 i_pos, Material & m) const = 0;
   virtual vec3 specular(vec3 normal, Ray & r, vec3 i_pos, Material & m) const = 0;
-};
-
-class AreaLight: public Light {
-public:
-  Figure * m_figure;
-
-  AreaLight(): Light(AREA), m_figure(NULL), m_last_sample(vec3()), m_n_at_last_sample(vec3()) { }
-
-  AreaLight(Figure * _f): Light(AREA), m_figure(_f), m_last_sample(vec3()), m_n_at_last_sample(vec3()) { }
-
-  virtual vec3 direction(vec3 point) const {
-    return normalize(m_last_sample - point);
-  }
-
-  virtual float distance(vec3 point) const {
-    return length(m_last_sample - point);
-  }
-
-  virtual vec3 diffuse(vec3 normal, Ray & r, vec3 i_pos, Material & m) const = 0;
-  virtual vec3 specular(vec3 normal, Ray & r, vec3 i_pos, Material & m) const = 0;
-  virtual void sample_at_surface(vec3 point) = 0;
-
-protected:
-  vec3 m_last_sample;
-  vec3 m_n_at_last_sample;
 };
 
 #endif

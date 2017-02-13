@@ -12,7 +12,7 @@
 	"radius": 0.25,
 	"material": {
 	    "diffuse": [1.0, 1.0, 1.0],
-	    "rho": 0.2
+	    "rho": 0.4
 	}
     },
 

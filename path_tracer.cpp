@@ -4,6 +4,7 @@
 
 #include "path_tracer.hpp"
 #include "sampling.hpp"
+#include "area_light.hpp"
 
 using std::numeric_limits;
 using namespace glm;
