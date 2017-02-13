@@ -1,6 +1,6 @@
 {
     "sphere_area_light": {
-	"position": [0.0, 0.95, -1.0],
+	"position": [0.0, 1.0, -1.0],
 	"radius": 0.15,
 	"material": {
 	    "emission": [1.0, 1.0, 1.0]
@@ -11,7 +11,8 @@
 	"position": [0.2, 0.0, -0.75],
 	"radius": 0.25,
 	"material": {
-	    "diffuse": [1.0, 1.0, 1.0]
+	    "diffuse": [1.0, 1.0, 1.0],
+	    "rho": 0.2
 	}
     },
 
