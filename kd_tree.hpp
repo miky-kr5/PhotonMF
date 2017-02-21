@@ -17,9 +17,7 @@ struct Vec3
   float y;
   float z;
 
-  Vec3() {
-    x = y = z = 0.0f;
-  }
+  Vec3(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f): x(_x), y(_y), z(_z) { }
   
   inline bool equalFloat(const float x, const float y)
   {
