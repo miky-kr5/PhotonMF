@@ -69,7 +69,7 @@ vec3 WhittedTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const 
 	} else if (s->m_lights[l]->light_type() == Light::AREA) {
 	  // Cast a shadow ray towards a sample point on the surface of the light source.
 	  al = static_cast<AreaLight *>(s->m_lights[l]);
-	  al->sample_at_surface(i_pos);
+	  al->sample_at_surface();
 	  sr = Ray(al->direction(i_pos), i_pos + (n * BIAS));
 
 	  for (size_t f = 0; f < s->m_figures.size(); f++) {

@@ -76,7 +76,11 @@ public:
       return vec3(0.0f);
   }
 
-  virtual void sample_at_surface(vec3 point) = 0;
+  virtual vec3 normal_at_last_sample() {
+    return m_n_at_last_sample;
+  }
+
+  virtual vec3 sample_at_surface() = 0;
 
 protected:
   vec3 m_last_sample;
