@@ -148,7 +148,7 @@ public:
   void addPhoton(Photon p);
   bool buildKdTree();
   void printTree();
-  std::vector<Photon> findInRange (Vec3 min, Vec3 max);
+  std::vector<Photon> findInRange (Vec3 min, Vec3 max) const;
 
 private:
   treeNode* root;
@@ -179,5 +179,5 @@ private:
 
   void printNode(treeNode* node);
 
-  void findInRange (Vec3 min, Vec3 max, std::vector<Photon> &photons, treeNode *node);
+  void findInRange (Vec3 min, Vec3 max, std::vector<Photon> &photons, treeNode *node) const;
 };

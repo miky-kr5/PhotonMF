@@ -1,6 +1,16 @@
-#include "kd_tree.hpp"
+#ifndef NDEBUG
+#include <iostream>
+#include <fstream>
+#endif
 #include <queue>
 
+#include "kd_tree.hpp"
+
+#ifndef NDEBUG
+using std::ofstream;
+using std::ios;
+using std::endl;
+#endif
 
 treeNode::treeNode(Photon p, superKey plane)
 {
@@ -125,6 +135,7 @@ kdTree::~kdTree(){}
 
 void kdTree::addPhoton(Photon p)
 {
+  
   Photons.push_back(p);
 }
 
@@ -259,6 +270,16 @@ bool kdTree::buildKdTree()
 
   //printTree();
 
+#ifndef NDEBUG
+  ofstream ofs("photons.txt", ios::out);
+  float r, g, b;
+  for (std::vector<Photon>::iterator it = Photons.begin(); it != Photons.end(); it++) {
+    rgbe2float(r, g, b, (*it).radiance);
+    ofs << (*it).position.x << " " << (*it).position.y << " " << (*it).position.z << " " << r << " " << g << " " << b << endl;
+  }
+  ofs.close();
+#endif
+  
   return true;
 }
 
@@ -287,7 +308,7 @@ void kdTree::printNode(treeNode* node)
 {
 }
 
-std::vector<Photon> kdTree::findInRange (Vec3 min, Vec3 max)
+std::vector<Photon> kdTree::findInRange (Vec3 min, Vec3 max) const
 {
   std::vector<Photon> photons;
 
@@ -296,7 +317,7 @@ std::vector<Photon> kdTree::findInRange (Vec3 min, Vec3 max)
   return photons;
 }
 
-void kdTree::findInRange (Vec3 min, Vec3 max, std::vector<Photon> &photons, treeNode *node)
+void kdTree::findInRange (Vec3 min, Vec3 max, std::vector<Photon> &photons, treeNode *node) const
 {	
   if(node == NULL) return;
 

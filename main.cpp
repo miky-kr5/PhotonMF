@@ -17,6 +17,7 @@
 #include "tracer.hpp"
 #include "path_tracer.hpp"
 #include "whitted_tracer.hpp"
+#include "photon_tracer.hpp"
 
 using namespace std;
 using namespace glm;
@@ -55,6 +56,8 @@ static tracer_t g_tracer = NONE;
 static unsigned int g_max_depth = 5;
 static float g_gamma = 2.2f;
 static float g_exposure = 0.0f;
+static size_t g_photons = 15000;
+static float g_p_sample_radius = 0.01f;
 
 ////////////////////////////////////////////
 // Main function.
@@ -63,6 +66,7 @@ int main(int argc, char ** argv) {
   Ray r;
   vec2 sample;
   Tracer * tracer;
+  PhotonTracer * p_tracer;
   size_t total;
   size_t current = 0;
   FIBITMAP * input_bitmap;
@@ -108,9 +112,12 @@ int main(int argc, char ** argv) {
     tracer = static_cast<Tracer *>(new PathTracer(g_max_depth));
 
   } else if(g_tracer == JENSEN) {
-    cerr << "Photon mapping coming soon." << endl;
-    return EXIT_FAILURE;
-
+    cout << "Using " << ANSI_BOLD_YELLOW << "Jensen's photon mapping" << ANSI_RESET_STYLE << " with ray tracing." << endl;
+    p_tracer = new PhotonTracer(g_max_depth, g_p_sample_radius);
+    cout << "Building photon map with " << ANSI_BOLD_YELLOW << g_photons << ANSI_RESET_STYLE << " primary photons per light source." << endl;
+    p_tracer->build_photon_map(scn, g_photons, false);
+    tracer = static_cast<Tracer *>(p_tracer);
+    
   } else {
     cerr << "Must specify a ray tracer with \"-t\"." << endl;
     print_usage(argv);
@@ -208,9 +215,9 @@ void print_usage(char ** const argv) {
   cerr << "Renders the scene specified by the scene file FILE." << endl << endl;
   cerr << "Mandatory options: " << endl;
   cerr << "  -t\tRay tracing method to use. Valid values: " << endl;
-  cerr << "    \twhitted     Classic Whitted ray tracing." << endl;
-  cerr << "    \tmonte_carlo Monte Carlo path tracing." << endl;
-  cerr << "    \tjensen      Photon mapping. " << endl << endl;
+  cerr << "    \t" << ANSI_BOLD_YELLOW << "whitted" << ANSI_RESET_STYLE << "     Classic Whitted ray tracing." << endl;
+  cerr << "    \t" << ANSI_BOLD_YELLOW << "monte_carlo" << ANSI_RESET_STYLE << " Monte Carlo path tracing." << endl;
+  cerr << "    \t" << ANSI_BOLD_YELLOW << "jensen" << ANSI_RESET_STYLE << "      Photon mapping. " << endl << endl;
   cerr << "Extra options:" << endl;
   cerr << "  -o\tOutput image file name with extension." << endl;
   cerr << "    \tDefaults to \"output.png\"." << endl;
@@ -226,11 +233,16 @@ void print_usage(char ** const argv) {
   cerr << "    \tDefaults to 2.2" << endl;
   cerr << "  -e\tExposure scale factor (in [-8, 8])." << endl;
   cerr << "    \tDefaults to 0.0 (no correction)." << endl;
+  cerr << "  -p\tNumber of primary photons per light source." << endl;
+  cerr << "    \tDefaults to 15000." << endl;
+  cerr << "  -h\tHemisphere radius for photon map sampling (> 0)." << endl;
+  cerr << "    \tDefaults to 0.01f ." << endl;
 }
 
 void parse_args(int argc, char ** const argv) {
   int opt;
   int x_pos;
+  int photons;
 
   // Check command line arguments.
   if(argc == 1) {
@@ -238,7 +250,7 @@ void parse_args(int argc, char ** const argv) {
     exit(EXIT_FAILURE);
   }
 
-  while((opt = getopt(argc, argv, "-:t:s:w:f:o:r:g:e:")) != -1) {
+  while((opt = getopt(argc, argv, "-:t:s:w:f:o:r:g:e:p:h:")) != -1) {
     switch (opt) {
     case 1:
       g_input_file = (char *)malloc((strlen(optarg) + 1) * sizeof(char));
@@ -328,7 +340,28 @@ void parse_args(int argc, char ** const argv) {
       }
 
       break;
-      
+
+    case 'p':
+      photons = atoi(optarg);
+      if (photons <= 0) {
+	cerr << "The number of photons must be a positive integer." << endl;
+	print_usage(argv);
+	exit(EXIT_FAILURE);
+      }
+      g_photons = (size_t)photons;
+
+      break;
+
+    case 'h':
+      g_p_sample_radius = atof(optarg);
+      if (g_p_sample_radius <= 0.0f) {
+	cerr << "Photon map sampling radius must be greater than 0.0" << endl;
+	print_usage(argv);
+	exit(EXIT_FAILURE);
+      }
+
+      break;
+
     case ':':
       cerr << "Option \"-" << static_cast<char>(optopt) << "\" requires an argument." << endl;
       print_usage(argv);
