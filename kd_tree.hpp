@@ -54,6 +54,10 @@ struct Photon
   {
     float2rgbe(radiance, red, green, blue);
   }
+
+  inline void getColor(float & red, float & green, float & blue) {
+    rgbe2float(red, green, blue, radiance);
+  }
   
   inline bool equalFloat(const float x, const float y)
   {

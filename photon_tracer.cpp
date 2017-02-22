@@ -8,7 +8,6 @@
 #include "photon_tracer.hpp"
 #include "sampling.hpp"
 #include "area_light.hpp"
-#include "rgbe.hpp"
 
 using std::cout;
 using std::endl;
@@ -117,7 +116,7 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
       mx = Vec3(i_pos.x + m_h_radius, i_pos.y + m_h_radius, i_pos.z + m_h_radius);
       photons =  m_photon_map.findInRange(mn, mx);
       for (vector<Photon>::iterator it = photons.begin(); it != photons.end(); it++) {
-	rgbe2float(red, green, blue, (*it).radiance);
+	(*it).getColor(red, green, blue);
 	p_contrib += vec3(red, green, blue);
       }
       p_contrib /= pi<float>() * (m_h_radius * m_h_radius);
