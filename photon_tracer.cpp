@@ -326,14 +326,14 @@ vec3 PhotonTracer::trace_photon(Ray &r, Scene * s, const unsigned int rec_level,
       // Add lighting.
       color += ((dir_diff_color + ind_color + amb_color) * (_f->m_mat->m_diffuse / pi<float>())) + (_f->m_mat->m_specular * dir_spec_color);
 
-      if (specular) {
+      //if (specular) {
 	// Determine the specular reflection color.
 	if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
 	  rr = Ray(normalize(reflect(r.m_direction, n)), i_pos + n * BIAS);
 	  color += _f->m_mat->m_rho * trace_ray(rr, s, rec_level + 1);
 	} else if (_f->m_mat->m_rho > 0.0f && rec_level >= m_max_depth)
 	  return vec3(0.0f);
-      }
+	//}
 
     } else {
       // If the material has transmission enabled, calculate the Fresnel term.
