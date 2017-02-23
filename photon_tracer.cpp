@@ -115,8 +115,8 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 	p_contrib += ((_f->m_mat->m_diffuse / pi<float>()) * vec3(red, green, blue)) / (pi<float>() * (radius * radius));
       }
       
-      color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color + p_contrib) * (_f->m_mat->m_diffuse / pi<float>())) +
-					    (_f->m_mat->m_specular * dir_spec_color));
+      color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color) * (_f->m_mat->m_diffuse / pi<float>())) +
+					    (_f->m_mat->m_specular * dir_spec_color) + p_contrib);
 
       // Determine the specular reflection color.
       if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
@@ -211,6 +211,7 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
   }
   cout << endl;
 
+  cout << "Generated " << ANSI_BOLD_YELLOW << m_photon_map.getNumPhotons() << ANSI_RESET_STYLE << " total photons." << endl;
   cout << "Building photon map Kd-tree." << endl;
   m_photon_map.buildKdTree();
 }

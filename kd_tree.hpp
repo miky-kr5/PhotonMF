@@ -154,6 +154,8 @@ public:
   void printTree();
   std::vector<Photon> findInRange (Vec3 min, Vec3 max) const;
 
+  size_t getNumPhotons();
+  
 private:
   treeNode* root;
   std::vector<Photon> Photons;

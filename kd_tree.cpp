@@ -1,16 +1,20 @@
-#ifndef NDEBUG
 #include <iostream>
+#ifndef NDEBUG
 #include <fstream>
 #endif
 #include <queue>
+
+#include <omp.h>
 
 #include "kd_tree.hpp"
 
 #ifndef NDEBUG
 using std::ofstream;
 using std::ios;
-using std::endl;
 #endif
+
+using std::cout;
+using std::endl;
 
 treeNode::treeNode(Photon p, superKey plane)
 {
@@ -86,12 +90,13 @@ void copyArray(T a[], int size, T b[])
 template <class T>
 void restoreArray(T a, int size)
 {
+#pragma omp parallel for schedule(dynamic, 1)
   for(int i = 0; i < size; i++)
     a[i] = i;
 }
 
 template <class T>
-void Merge(T a[], int begin, int middle, int end, T b[], superKey key, std::vector<Photon> originalData)
+void Merge(T a[], int begin, int middle, int end, T b[], superKey key, std::vector<Photon> & originalData)
 {
   int i = begin, j = middle;
 
@@ -111,7 +116,7 @@ void Merge(T a[], int begin, int middle, int end, T b[], superKey key, std::vect
 }
 
 template <class T>
-void SplitMerge(T b[], int begin, int end, T a[], superKey key, std::vector<Photon> originalData)
+void SplitMerge(T b[], int begin, int end, T a[], superKey key, std::vector<Photon> & originalData)
 {
   if(end - begin < 2)
     return;
@@ -125,9 +130,9 @@ void SplitMerge(T b[], int begin, int end, T a[], superKey key, std::vector<Phot
 }
 
 template <class T>
-void MegeSort(T a[], T b[], int size, superKey key, std::vector<Photon> originalData)
+void MegeSort(T a[], T b[], int size, superKey key, std::vector<Photon> & originalData)
 {
-  SplitMerge(b, 0, size, a, key ,originalData);
+  SplitMerge(b, 0, size, a, key, originalData);
 }
 
 kdTree::kdTree(){root = NULL;}
@@ -240,25 +245,87 @@ bool kdTree::buildKdTree()
   int *yzx = new int[size];
   int *zxy = new int[size];
   int *xyz_aux = new int[size];
+  int *xyz_aux2 = new int[size];
+  int *xyz_aux3 = new int[size];
   int *yzx_aux = new int[size];
   int *zxy_aux = new int[size];
 
+  cout << "Calculating medians." << endl;
+
+#pragma omp parallel for schedule(dynamic, 1)
   for(int i = 0; i < size; i++)
     {
       xyz[i] = i;
       yzx[i] = i;
       zxy[i] = i;
       xyz_aux[i] = i;
+      xyz_aux2[i] = i;
+      xyz_aux3[i] = i;
     }
 
-  MegeSort(xyz, xyz_aux, size, XYZ, Photons);
-  restoreArray(xyz_aux, size);
+  if (omp_get_max_threads() == 2) {
 
-  MegeSort(yzx, xyz_aux, size, YZX, Photons);
-  restoreArray(xyz_aux, size);
+#pragma omp parallel
+    {
+      if (omp_get_thread_num() == 0) {
+#pragma omp critical
+	{
+	  cout << "Sorting \x1b[1;33mXYZ\x1b[m." << endl;
+	}
+	MegeSort(xyz, xyz_aux, size, XYZ, Photons);
+	// restoreArray(xyz_aux, size);
+      } else if(omp_get_thread_num() == 1) {
+#pragma omp critical
+	{
+	  cout << "Sorting \x1b[1;33mYZX\x1b[m." << endl;
+	}
+	MegeSort(yzx, xyz_aux2, size, YZX, Photons);
+	// restoreArray(xyz_aux, size);
+      }
+    }
 
-  MegeSort(zxy, xyz_aux, size, ZXY, Photons);
+    cout << "Sorting \x1b[1;33mZXY\x1b[m." << endl;
+    MegeSort(zxy, xyz_aux3, size, ZXY, Photons);
+    
+  } else if (omp_get_max_threads() >= 3) {
+#pragma omp parallel
+    {
+      if (omp_get_thread_num() == 0) {
+#pragma omp critical
+	{
+	  cout << "Sorting \x1b[1;33mXYZ\x1b[m." << endl;
+	}
+	MegeSort(xyz, xyz_aux, size, XYZ, Photons);
+	// restoreArray(xyz_aux, size);
+      } else if(omp_get_thread_num() == 1) {
+#pragma omp critical
+	{
+	  cout << "Sorting \x1b[1;33mYZX\x1b[m." << endl;
+	}
+	MegeSort(yzx, xyz_aux2, size, YZX, Photons);
+	// restoreArray(xyz_aux, size);
+      } else if (omp_get_thread_num() == 2) {
+#pragma omp critical
+	{
+	  cout << "Sorting \x1b[1;33mZXY\x1b[m." << endl;
+	}
+	MegeSort(zxy, xyz_aux3, size, ZXY, Photons);
+      }
+    }
+  } else {
+    cout << "Sorting \x1b[1;33mXYZ\x1b[m." << endl;
+    MegeSort(xyz, xyz_aux, size, XYZ, Photons);
+    // restoreArray(xyz_aux, size);
+    
+    cout << "Sorting \x1b[1;33mYZX\x1b[m." << endl;
+    MegeSort(yzx, xyz_aux2, size, YZX, Photons);
+    // restoreArray(xyz_aux, size);
+    
+    cout << "Sorting \x1b[1;33mZXY\x1b[m." << endl;
+    MegeSort(zxy, xyz_aux3, size, ZXY, Photons);
+  }
 
+#pragma omp parallel for schedule(dynamic, 1)
   for(int i = 0; i < size; i++)
     {
       xyz_aux[i] = xyz[i];
@@ -266,11 +333,13 @@ bool kdTree::buildKdTree()
       zxy_aux[i] = zxy[i];
     }
 
+  cout << "Adding photons to the tree." << endl;
   createNodeKdTree(&root, Photons , xyz, yzx, zxy, XYZ, 0, size, xyz_aux, yzx_aux, zxy_aux);
 
   //printTree();
 
 #ifndef NDEBUG
+  cout << "Writing photons to \x1b[1;33mphotons.txt\x1b[m" << endl;
   ofstream ofs("photons.txt", ios::out);
   float r, g, b;
   for (std::vector<Photon>::iterator it = Photons.begin(); it != Photons.end(); it++) {
@@ -279,6 +348,15 @@ bool kdTree::buildKdTree()
   }
   ofs.close();
 #endif
+
+  // delete[] xyz;
+  // delete[] yzx;
+  // delete[] zxy;
+  // delete[] xyz_aux;
+  // delete[] xyz_aux2;
+  // delete[] xyz_aux3;
+  // delete[] yzx_aux;
+  // delete[] zxy_aux;
   
   return true;
 }
@@ -331,4 +409,8 @@ void kdTree::findInRange (Vec3 min, Vec3 max, std::vector<Photon> &photons, tree
   if(*node <= max)
     findInRange(min, max, photons, *node->getRightChild());
 
+}
+
+size_t kdTree::getNumPhotons() {
+  return Photons.size();
 }

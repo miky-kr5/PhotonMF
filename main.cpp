@@ -27,6 +27,8 @@ using namespace glm;
 ////////////////////////////////////////////
 #define ANSI_BOLD_YELLOW "\x1b[1;33m"
 #define ANSI_RESET_STYLE "\x1b[m"
+#define MAX_W 1920
+#define MAX_H 1080
 
 ////////////////////////////////////////////
 // Function prototypes.
@@ -51,7 +53,7 @@ static float g_fov = 45.0f;
 static int g_w = 640;
 static int g_h = 480;
 static float g_a_ratio = 640.0f / 480.0f;
-static vec3 ** image;
+static vec3 image[MAX_H][MAX_W];
 static tracer_t g_tracer = NONE;
 static unsigned int g_max_depth = 5;
 static float g_gamma = 2.2f;
@@ -81,11 +83,6 @@ int main(int argc, char ** argv) {
   
   // Initialize everything.
   FreeImage_Initialise();
-
-  image = new vec3*[g_h];
-  for (int i = 0; i < g_h; i++) {
-    image[i] = new vec3[g_w];
-  }
 
   try {
     scn = new Scene(g_input_file);
@@ -198,10 +195,6 @@ int main(int argc, char ** argv) {
   delete scn;
   delete tracer;
 
-  for (int i = 0; i < g_h; i++)
-    delete[] image[i];
-  delete[] image;
-
   FreeImage_DeInitialise();
   
   return EXIT_SUCCESS;
@@ -227,6 +220,8 @@ void print_usage(char ** const argv) {
   cerr << "    \tDefaults to 25 samples." << endl;
   cerr << "  -w\tImage size in pixels as \"WIDTHxHEIGHT\"." << endl;
   cerr << "    \tDefaults to 640x480 pixels." << endl;
+  cerr << "    \tMinimum resolution is 1x1 pixels." << endl;
+  cerr << "    \tMaxmimum resolution is " << MAX_W << "x" << MAX_H << " pixels." << endl;
   cerr << "  -r\tMaxmimum recursion depth." << endl;
   cerr << "    \tDefaults to 5." << endl;
   cerr << "  -g\tGamma correction value (>= 0)." << endl;
@@ -295,7 +290,7 @@ void parse_args(int argc, char ** const argv) {
 	optarg[x_pos] = '\0';
 	g_w = atoi(optarg);
 	g_h = atoi(&optarg[x_pos + 1]);
-	if (g_w <= 0 || g_h <= 0) {
+	if (g_w <= 0 || g_h <= 0 || g_w >= MAX_W || g_h >= MAX_H) {
 	  cerr << "Invalid screen resolution: " << optarg << endl;
 	  print_usage(argv);
 	  exit(EXIT_FAILURE);
