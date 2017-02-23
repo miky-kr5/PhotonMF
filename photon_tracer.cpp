@@ -110,15 +110,14 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 	mx = Vec3(i_pos.x + radius, i_pos.y + radius, i_pos.z + radius);
       }
 
-      if (photons.size() > 0) {
-	for (vector<Photon>::iterator it = photons.begin(); it != photons.end(); it++) {
-	  (*it).getColor(red, green, blue);
-	  p_contrib += vec3(red, green, blue);
-	}
-	p_contrib /= pi<float>() * (radius * radius) * photons.size();
+      for (vector<Photon>::iterator it = photons.begin(); it != photons.end(); it++) {
+	(*it).getColor(red, green, blue);
+	p_contrib += vec3(red, green, blue);
       }
+      p_contrib /= pi<float>() * (radius * radius);
       
-      color += ((dir_diff_color + p_contrib) * (_f->m_mat->m_diffuse / pi<float>())) + (_f->m_mat->m_specular * dir_spec_color);
+      color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color + p_contrib) * (_f->m_mat->m_diffuse / pi<float>())) +
+					    (_f->m_mat->m_specular * dir_spec_color));
 
       // Determine the specular reflection color.
       if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
@@ -157,7 +156,7 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth, const bool specular) {
   Light * l;
   AreaLight * al;
-  vec3 l_sample, s_normal, h_sample;
+  vec3 l_sample, s_normal, h_sample, power;
   Vec3 ls, dir;
   float r1, r2;
   Photon ph;
@@ -191,7 +190,8 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
 	rotate_sample(h_sample, s_normal);
 	ls = Vec3(l_sample.x, l_sample.y, l_sample.z);
 	dir = Vec3(h_sample.x, h_sample.y, h_sample.z);
-	ph = Photon(ls, dir, al->m_figure->m_mat->m_emission.r, al->m_figure->m_mat->m_emission.g, al->m_figure->m_mat->m_emission.b);
+	power = (al->m_figure->m_mat->m_emission / static_cast<float>(n_photons_per_ligth)) / (al->m_figure->pdf());
+	ph = Photon(ls, dir, power.r, power.g, power.b, 1.0f);
 
       } else {
 	// TODO: Generate photon from light source in direction of specular reflective objects.
@@ -243,6 +243,7 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
     i_pos = r.m_origin + (t * r.m_direction);
     n = _f->normal_at_int(r, t);
 
+    // Store the diffuse photon and trace.
     if (!_f->m_mat->m_refract && rec_level < m_max_depth){
       if (rec_level < m_max_depth) {
 	r1 = random01();
@@ -257,7 +258,7 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
       color = (1.0f - _f->m_mat->m_rho) * (vec3(red, green, blue) * (_f->m_mat->m_diffuse / pi<float>()));
       p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
       p_dir = Vec3(sample.x, sample.y, sample.z);
-      photon = Photon(p_pos, p_dir, color.r, color.g, color.b);
+      photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
 #pragma omp critical
       {
 	m_photon_map.addPhoton(photon);
@@ -266,33 +267,32 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
       trace_photon(photon, s, rec_level + 1);
     }
 
-    // Determine the specular reflection color.
+    // Trace the reflected photon.
     if (!_f->m_mat->m_refract && _f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
       color = (_f->m_mat->m_rho) * vec3(red, green, blue);
       i_pos += n * BIAS;
       p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
       ph_dir = normalize(reflect(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n));
       p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
-      photon = Photon(p_pos, p_dir, color.r, color.g, color.b);
+      photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
       trace_photon(photon, s, rec_level + 1);
 
     } else if (_f->m_mat->m_refract && rec_level >= m_max_depth) {
       // If the material has transmission enabled, calculate the Fresnel term.
       kr = fresnel(r.m_direction, n, r.m_ref_index, _f->m_mat->m_ref_index);
 
-      // Determine the specular reflection color.
+      // Trace the reflected photon.
       if (kr > 0.0f && rec_level < m_max_depth) {
 	color = kr * vec3(red, green, blue);
 	i_pos += n * BIAS;
 	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
 	ph_dir = normalize(reflect(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n));
 	p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
-	photon = Photon(p_pos, p_dir, color.r, color.g, color.b);
+	photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
 	trace_photon(photon, s, rec_level + 1);
-
       }
 
-      // Determine the transmission color.
+      // Trace the transmitted photon.
       if (_f->m_mat->m_refract && kr < 1.0f && rec_level < m_max_depth) {
 	color = (1.0f - kr) * vec3(red, green, blue);
 	i_pos -= n * (2 * BIAS);
