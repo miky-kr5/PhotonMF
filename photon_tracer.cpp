@@ -112,9 +112,8 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 
       for (vector<Photon>::iterator it = photons.begin(); it != photons.end(); it++) {
 	(*it).getColor(red, green, blue);
-	p_contrib += vec3(red, green, blue);
+	p_contrib += ((_f->m_mat->m_diffuse / pi<float>()) * vec3(red, green, blue)) / (pi<float>() * (radius * radius));
       }
-      p_contrib /= pi<float>() * (radius * radius);
       
       color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color + p_contrib) * (_f->m_mat->m_diffuse / pi<float>())) +
 					    (_f->m_mat->m_specular * dir_spec_color));
