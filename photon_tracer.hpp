@@ -18,7 +18,7 @@ public:
 private:
   float m_h_radius;
   kdTree m_photon_map;
-  vec3 trace_photon(Ray &r, Scene * s, const unsigned int rec_level, const bool specular = false);
+  void trace_photon(Photon & ph, Scene * s, const unsigned int rec_level);
 };
 
 #endif

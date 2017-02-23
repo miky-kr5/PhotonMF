@@ -140,7 +140,7 @@ void kdTree::addPhoton(Photon p)
 }
 
 
-void kdTree::createNodeKdTree(treeNode** node, std::vector<Photon> originalData , int* xyz, int* yzx, int* zxy, superKey key, int begin, int end, int* xyz_2, int* yzx_2, int* zxy_2)
+void kdTree::createNodeKdTree(treeNode** node, std::vector<Photon> & originalData , int* xyz, int* yzx, int* zxy, superKey key, int begin, int end, int* xyz_2, int* yzx_2, int* zxy_2)
 {
   if(end - begin < 2)
     {
@@ -196,7 +196,7 @@ void kdTree::createNodeKdTree(treeNode** node, std::vector<Photon> originalData 
   createNodeKdTree((*node)->getRightChild(), originalData, xyz_2, yzx_2, zxy_2, key, mid + 1, end, xyz, yzx, zxy);
 }
 
-void kdTree::reorderArrays(std::vector<Photon> originalData, int* A1, int* A2, int begin, int mid, int end, int orderIndex, superKey key, int* B1, int* B2)
+void kdTree::reorderArrays(std::vector<Photon> & originalData, int* A1, int* A2, int begin, int mid, int end, int orderIndex, superKey key, int* B1, int* B2)
 {
   int lowerindex1 = begin, higherindex1 = mid + 1, lowerindex2 = begin, higherindex2 = mid + 1;
 

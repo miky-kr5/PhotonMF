@@ -43,14 +43,14 @@ struct Vec3
 struct Photon
 {
   Vec3 position;
+  Vec3 direction;
+  float ref_index;
   unsigned char radiance[4];
-  char phi, theta;
-  short unused_flag; // for 20 bytes struct.
 
-  Photon(Vec3 _p = Vec3(), float red = 0.0f, float green = 0.0f, float blue = 0.0f, char _phi = 0.0f, char _theta = 0.0f):
+  Photon(Vec3 _p = Vec3(), Vec3 _d = Vec3(), float red = 0.0f, float green = 0.0f, float blue = 0.0f, float _r = 1.0f):
     position(_p),
-    phi(_phi),
-    theta(_theta)
+    direction(_d),
+    ref_index(_r)
   {
     float2rgbe(radiance, red, green, blue);
   }
@@ -159,7 +159,7 @@ private:
   std::vector<Photon> Photons;
 
   void createNodeKdTree(treeNode** node,
-			std::vector<Photon> originalData ,
+			std::vector<Photon> & originalData ,
 			int* xyz,
 			int* yzx,
 			int* zxy,
@@ -170,7 +170,7 @@ private:
 			int* yzx_2,
 			int* zxy_2);
 
-  void reorderArrays(std::vector<Photon> originalData,
+  void reorderArrays(std::vector<Photon> & originalData,
 		     int* A1,
 		     int* A2,
 		     int begin,
@@ -183,5 +183,5 @@ private:
 
   void printNode(treeNode* node);
 
-  void findInRange (Vec3 min, Vec3 max, std::vector<Photon> &photons, treeNode *node) const;
+  void findInRange (Vec3 min, Vec3 max, std::vector<Photon> & photons, treeNode *node) const;
 };

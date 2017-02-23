@@ -22,17 +22,14 @@ using namespace glm;
 PhotonTracer::~PhotonTracer() { }
 
 vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
-  float t, _t;
+  float t, _t, radius, red, green, blue, kr;
   Figure * _f;
   vec3 n, color, i_pos, ref, dir_diff_color, dir_spec_color, p_contrib;
   Ray mv_r, sr, rr;
   bool vis, is_area_light;
-  float kr;
   AreaLight * al;
-  Vec3 mn;
-  Vec3 mx;
+  Vec3 mn, mx;
   vector<Photon> photons;
-  float red, green, blue;
 
   t = numeric_limits<float>::max();
   _f = NULL;
@@ -101,8 +98,27 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 	dir_diff_color += vis ? s->m_lights[l]->diffuse(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
 	dir_spec_color += vis ? s->m_lights[l]->specular(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
       }
+
+      // TODO: Change photon map search method for hemisphere search.
+      radius = m_h_radius;
+      mn = Vec3(i_pos.x - radius, i_pos.y - radius, i_pos.z - radius);
+      mx = Vec3(i_pos.x + radius, i_pos.y + radius, i_pos.z + radius);
+
+      while((photons =  m_photon_map.findInRange(mn, mx)).size() == 0 && radius < 5.0) {
+	radius *= 2;
+	mn = Vec3(i_pos.x - radius, i_pos.y - radius, i_pos.z - radius);
+	mx = Vec3(i_pos.x + radius, i_pos.y + radius, i_pos.z + radius);
+      }
+
+      if (photons.size() > 0) {
+	for (vector<Photon>::iterator it = photons.begin(); it != photons.end(); it++) {
+	  (*it).getColor(red, green, blue);
+	  p_contrib += vec3(red, green, blue);
+	}
+	p_contrib /= pi<float>() * (radius * radius) * photons.size();
+      }
       
-      color += (dir_diff_color * (_f->m_mat->m_diffuse / pi<float>())) + (_f->m_mat->m_specular * dir_spec_color);
+      color += ((dir_diff_color + p_contrib) * (_f->m_mat->m_diffuse / pi<float>())) + (_f->m_mat->m_specular * dir_spec_color);
 
       // Determine the specular reflection color.
       if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
@@ -111,17 +127,6 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
       } else if (_f->m_mat->m_rho > 0.0f && rec_level >= m_max_depth)
 	  return vec3(0.0f);
 
-      // TODO: Change photon map search method for hemisphere search.
-      mn = Vec3(i_pos.x - m_h_radius, i_pos.y - m_h_radius, i_pos.z - m_h_radius);
-      mx = Vec3(i_pos.x + m_h_radius, i_pos.y + m_h_radius, i_pos.z + m_h_radius);
-      photons =  m_photon_map.findInRange(mn, mx);
-      for (vector<Photon>::iterator it = photons.begin(); it != photons.end(); it++) {
-	(*it).getColor(red, green, blue);
-	p_contrib += vec3(red, green, blue);
-      }
-      p_contrib /= pi<float>() * (m_h_radius * m_h_radius);
-      color += p_contrib;
-      
     } else {
       // If the material has transmission enabled, calculate the Fresnel term.
       kr = fresnel(r.m_direction, n, r.m_ref_index, _f->m_mat->m_ref_index);
@@ -153,8 +158,9 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
   Light * l;
   AreaLight * al;
   vec3 l_sample, s_normal, h_sample;
+  Vec3 ls, dir;
   float r1, r2;
-  Ray rr;
+  Photon ph;
   size_t total = 0, current = 0;
 
   for (vector<Light *>::iterator it = s->m_lights.begin(); it != s->m_lights.end(); it++) {
@@ -173,7 +179,7 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
 
     al = static_cast<AreaLight *>(l);
       
-#pragma omp parallel for schedule(dynamic, 1) private(l_sample, s_normal, h_sample, r1, r2, rr) shared(current)
+#pragma omp parallel for schedule(dynamic, 1) private(l_sample, s_normal, h_sample, r1, r2) shared(current)
     for (size_t p = 0; p < n_photons_per_ligth; p++) {
       if (!specular) {
 	l_sample = al->sample_at_surface();
@@ -181,15 +187,22 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
 
 	r1 = random01();
 	r2 = random01();
-	h_sample = sample_hemisphere(r1, r2);
+	h_sample = normalize(sample_hemisphere(r1, r2));
 	rotate_sample(h_sample, s_normal);
-	rr = Ray(normalize(h_sample), l_sample + (h_sample * BIAS));
+	ls = Vec3(l_sample.x, l_sample.y, l_sample.z);
+	dir = Vec3(h_sample.x, h_sample.y, h_sample.z);
+	ph = Photon(ls, dir, al->m_figure->m_mat->m_emission.r, al->m_figure->m_mat->m_emission.g, al->m_figure->m_mat->m_emission.b);
 
       } else {
 	// TODO: Generate photon from light source in direction of specular reflective objects.
       }
       
-      trace_photon(rr, s, 0, specular);
+#pragma omp critical
+      {
+	m_photon_map.addPhoton(ph);
+      }
+
+      trace_photon(ph, s, 0);
 
 #pragma omp atomic
 	current++;
@@ -203,21 +216,20 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
   m_photon_map.buildKdTree();
 }
 
-vec3 PhotonTracer::trace_photon(Ray &r, Scene * s, const unsigned int rec_level, const bool specular) {
+void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_level) {
   Photon photon;
-  float t, _t;
+  float t, _t, red, green, blue;
   Figure * _f;
-  vec3 n, color, i_pos, ref, sample, dir_diff_color, dir_spec_color, ind_color, amb_color;
-  Vec3 p_pos;
-  Ray mv_r, sr, rr;
-  bool vis, is_area_light = false;
+  vec3 n, color, i_pos, sample, ph_dir, ph_pos;
+  Vec3 p_pos, p_dir;
+  Ray r;
   float kr, r1, r2;
-  AreaLight * al;
 
   t = numeric_limits<float>::max();
   _f = NULL;
 
   // Find the closest intersecting surface.
+  r = Ray(ph.direction.x, ph.direction.y, ph.direction.z, ph.position.x, ph.position.y, ph.position.z);
   for (size_t f = 0; f < s->m_figures.size(); f++) {
     if (s->m_figures[f]->intersect(r, _t) && _t < t) {
       t = _t;
@@ -231,142 +243,65 @@ vec3 PhotonTracer::trace_photon(Ray &r, Scene * s, const unsigned int rec_level,
     i_pos = r.m_origin + (t * r.m_direction);
     n = _f->normal_at_int(r, t);
 
-    is_area_light = false;
-    // Check if the object is an area light;
-    for (vector<Light *>::iterator it = s->m_lights.begin(); it != s->m_lights.end(); it++) {
-      if ((*it)->light_type() == Light::AREA && static_cast<AreaLight *>(*it)->m_figure == _f)
-	is_area_light = true;
-    }
-
-    // If the object is an area light, return it's emission value.
-    if (is_area_light) {
-      p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
-      photon = Photon(p_pos, _f->m_mat->m_emission.r, _f->m_mat->m_emission.g, _f->m_mat->m_emission.b);
-
-#pragma omp critical
-      {
-	m_photon_map.addPhoton(photon);
-      }
-      
-      return _f->m_mat->m_emission;
-
-    // Check if the material is not reflective/refractive.
-    } else if (!_f->m_mat->m_refract) {
-      // Calculate the direct lighting.
-      for (size_t l = 0; l < s->m_lights.size(); l++) {
-	// For every light source
-	vis = true;
-
-	if (s->m_lights[l]->light_type() == Light::INFINITESIMAL) {
-	  // Cast a shadow ray to determine visibility.
-	  sr = Ray(s->m_lights[l]->direction(i_pos), i_pos + (n * BIAS));
-
-	  for (size_t f = 0; f < s->m_figures.size(); f++) {
-	    if (s->m_figures[f]->intersect(sr, _t) && _t < s->m_lights[l]->distance(i_pos)) {
-	      vis = false;
-	      break;
-	    }
-	  }
-
-	// Evaluate the shading model accounting for visibility.
-	dir_diff_color += vis ? s->m_lights[l]->diffuse(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
-	dir_spec_color += vis ? s->m_lights[l]->specular(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
-
-	} else if (s->m_lights[l]->light_type() == Light::AREA) {
-	  // Cast a shadow ray towards a sample point on the surface of the light source.
-	  al = static_cast<AreaLight *>(s->m_lights[l]);
-	  al->sample_at_surface();
-	  sr = Ray(al->direction(i_pos), i_pos + (n * BIAS));
-
-	  for (size_t f = 0; f < s->m_figures.size(); f++) {
-	    // Avoid self-intersection with the light source.
-	    if (al->m_figure != s->m_figures[f]) {
-	      if (s->m_figures[f]->intersect(sr, _t) && _t < al->distance(i_pos)) {
-		vis = false;
-		break;
-	      }
-	    }
-	  }
-
-	  // Evaluate the shading model accounting for visibility.
-	  dir_diff_color += vis ? s->m_lights[l]->diffuse(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
-	  dir_spec_color += vis ? s->m_lights[l]->specular(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
-	}
-      }
-
-      // Calculate indirect lighting contribution.
+    if (!_f->m_mat->m_refract && rec_level < m_max_depth){
       if (rec_level < m_max_depth) {
 	r1 = random01();
 	r2 = random01();
 	sample = sample_hemisphere(r1, r2);
 	rotate_sample(sample, n);
-	rr = Ray(normalize(sample), i_pos + (sample * BIAS));
-	ind_color += r1 * trace_ray(rr, s, rec_level + 1) / PDF;
+	normalize(sample);
+      } else
+	sample = vec3(0.0f);
+
+      ph.getColor(red, green, blue);
+      color = (1.0f - _f->m_mat->m_rho) * (vec3(red, green, blue) * (_f->m_mat->m_diffuse / pi<float>()));
+      p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
+      p_dir = Vec3(sample.x, sample.y, sample.z);
+      photon = Photon(p_pos, p_dir, color.r, color.g, color.b);
+#pragma omp critical
+      {
+	m_photon_map.addPhoton(photon);
       }
 
-      // Calculate environment light contribution
-      vis = true;
+      trace_photon(photon, s, rec_level + 1);
+    }
 
-      r1 = random01();
-      r2 = random01();
-      sample = sample_hemisphere(r1, r2);
-      rotate_sample(sample, n);
-      rr = Ray(normalize(sample), i_pos + (sample * BIAS));
+    // Determine the specular reflection color.
+    if (!_f->m_mat->m_refract && _f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
+      color = (_f->m_mat->m_rho) * vec3(red, green, blue);
+      i_pos += n * BIAS;
+      p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
+      ph_dir = normalize(reflect(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n));
+      p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
+      photon = Photon(p_pos, p_dir, color.r, color.g, color.b);
+      trace_photon(photon, s, rec_level + 1);
 
-      // Cast a shadow ray to determine visibility.
-      for (size_t f = 0; f < s->m_figures.size(); f++) {
-	if (s->m_figures[f]->intersect(rr, _t)) {
-	  vis = false;
-	  break;
-	}
-      }
-
-      amb_color = vis ? s->m_env->get_color(rr) * max(dot(n, rr.m_direction), 0.0f) / PDF : vec3(0.0f);
-
-      // Add lighting.
-      color += ((dir_diff_color + ind_color + amb_color) * (_f->m_mat->m_diffuse / pi<float>())) + (_f->m_mat->m_specular * dir_spec_color);
-
-      //if (specular) {
-	// Determine the specular reflection color.
-	if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
-	  rr = Ray(normalize(reflect(r.m_direction, n)), i_pos + n * BIAS);
-	  color += _f->m_mat->m_rho * trace_ray(rr, s, rec_level + 1);
-	} else if (_f->m_mat->m_rho > 0.0f && rec_level >= m_max_depth)
-	  return vec3(0.0f);
-	//}
-
-    } else {
+    } else if (_f->m_mat->m_refract && rec_level >= m_max_depth) {
       // If the material has transmission enabled, calculate the Fresnel term.
       kr = fresnel(r.m_direction, n, r.m_ref_index, _f->m_mat->m_ref_index);
 
       // Determine the specular reflection color.
       if (kr > 0.0f && rec_level < m_max_depth) {
-	rr = Ray(normalize(reflect(r.m_direction, n)), i_pos + n * BIAS);
-	color += kr * trace_ray(rr, s, rec_level + 1);
-      } else if (rec_level >= m_max_depth)
-	return vec3(0.0f);
+	color = kr * vec3(red, green, blue);
+	i_pos += n * BIAS;
+	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
+	ph_dir = normalize(reflect(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n));
+	p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
+	photon = Photon(p_pos, p_dir, color.r, color.g, color.b);
+	trace_photon(photon, s, rec_level + 1);
+
+      }
 
       // Determine the transmission color.
       if (_f->m_mat->m_refract && kr < 1.0f && rec_level < m_max_depth) {
-	rr = Ray(normalize(refract(r.m_direction, n, r.m_ref_index / _f->m_mat->m_ref_index)), i_pos - n * BIAS, _f->m_mat->m_ref_index);
-	color += (1.0f - kr) * trace_ray(rr, s, rec_level + 1);
-      } else if (rec_level >= m_max_depth)
-	  return vec3(0.0f);
-
+	color = (1.0f - kr) * vec3(red, green, blue);
+	i_pos -= n * (2 * BIAS);
+	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
+	ph_dir = normalize(refract(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n, ph.ref_index / _f->m_mat->m_ref_index));
+	p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
+	photon = Photon(p_pos, p_dir, color.r, color.g, color.b, _f->m_mat->m_ref_index);
+	trace_photon(photon, s, rec_level + 1);
+      }
     }
-
-    color += _f->m_mat->m_emission;
-    
-    p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
-    photon = Photon(p_pos, color.r, color.g, color.b);
-#pragma omp critical
-    {
-      m_photon_map.addPhoton(photon);
-    }
-
-    // Return final color.
-    return color;
-
-  } else
-    return s->m_env->get_color(r);
+  }
 }
