@@ -5,11 +5,11 @@ OBJECTS = main.o sampling.o camera.o environment.o disk.o plane.o sphere.o \
           spot_light.o sphere_area_light.o disk_area_light.o scene.o tracer.o \
           path_tracer.o whitted_tracer.o rgbe.o kd_tree.o photon_tracer.o
 DEPENDS = $(OBJECTS:.o=.d)
-CXXFLAGS = -ansi -pedantic -Wall -DGLM_FORCE_RADIANS -fopenmp
+CXXFLAGS = -ansi -pedantic -Wall -DGLM_FORCE_RADIANS -fopenmp -std=c++11
 LDLIBS = -lfreeimage -ljson_spirit
 
 .PHONY: all
-all: CXXFLAGS += -O2 -DNDEBUG
+all: CXXFLAGS += -O3 -DNDEBUG
 all: $(TARGET)
 
 .PHONY: debug

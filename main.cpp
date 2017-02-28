@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cstdint>
 #include <unistd.h>
 
 #include <omp.h>
@@ -69,8 +70,8 @@ int main(int argc, char ** argv) {
   vec2 sample;
   Tracer * tracer;
   PhotonTracer * p_tracer;
-  size_t total;
-  size_t current = 0;
+  uint64_t total;
+  uint64_t current = 0;
   FIBITMAP * input_bitmap;
   FIBITMAP * output_bitmap;
   FREE_IMAGE_FORMAT fif;
@@ -122,7 +123,7 @@ int main(int argc, char ** argv) {
   }
   
   // Generate the image.
-  total = g_h * g_w * g_samples;
+  total = static_cast<uint64_t>(g_h) * static_cast<uint64_t>(g_w) * static_cast<uint64_t>(g_samples);
   cout << "Tracing a total of " << ANSI_BOLD_YELLOW << total << ANSI_RESET_STYLE << " primary rays:" << endl;
 #pragma omp parallel for schedule(dynamic, 1) private(r, sample) shared(current)
   for (int i = 0; i < g_h; i++) {
@@ -138,7 +139,7 @@ int main(int argc, char ** argv) {
       image[i][j] /= g_samples;
     }
 #pragma omp critical
-    cout << "\r" << setw(3) << static_cast<size_t>((static_cast<double>(current) / static_cast<double>(total)) * 100.0) << "% done.";
+    cout << "\r" << ANSI_BOLD_YELLOW << current << ANSI_RESET_STYLE << " of " << ANSI_BOLD_YELLOW << total << ANSI_RESET_STYLE << " primary rays traced.";
   }
   cout << endl;
 

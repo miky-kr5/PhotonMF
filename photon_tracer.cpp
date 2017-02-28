@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <limits>
 #include <vector>
+#include <cstdint>
 
 #include <glm/gtc/constants.hpp>
 
@@ -159,12 +160,12 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
   Vec3 ls, dir;
   float r1, r2;
   Photon ph;
-  size_t total = 0, current = 0;
+  uint64_t total = 0, current = 0;
 
   for (vector<Light *>::iterator it = s->m_lights.begin(); it != s->m_lights.end(); it++) {
     total += (*it)->light_type() == Light::AREA ? 1 : 0;
   }
-  total *= n_photons_per_ligth;
+  total *= static_cast<uint64_t>(n_photons_per_ligth);
 
   cout << "Tracing a total of " << ANSI_BOLD_YELLOW << total << ANSI_RESET_STYLE << " primary photons:" << endl;
   

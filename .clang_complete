@@ -3,3 +3,4 @@
 -Wall
 -DGLM_FORCE_RADIANS
 -fopenmp
+-std=c++11
