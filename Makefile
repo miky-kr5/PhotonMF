@@ -1,5 +1,6 @@
 CXX = g++
-TARGET = ray
+TARGET = ray pviewer
+PVDIR = PhotonViewer
 OBJECTS = main.o sampling.o camera.o environment.o disk.o plane.o sphere.o \
           phong_brdf.o hsa_brdf.o directional_light.o point_light.o \
           spot_light.o sphere_area_light.o disk_area_light.o scene.o tracer.o \
@@ -16,8 +17,8 @@ all: $(TARGET)
 debug: CXXFLAGS += -g
 debug: $(TARGET)
 
-$(TARGET): $(OBJECTS)
-	$(CXX) -o $(TARGET) $(OBJECTS) $(CXXFLAGS) $(LDLIBS)
+ray: $(OBJECTS)
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDLIBS)
 
 -include $(DEPENDS)
 
@@ -25,6 +26,11 @@ $(TARGET): $(OBJECTS)
 	$(CXX) -c $(CXXFLAGS) $*.cpp -o $*.o
 	$(CXX) -MM $(CXXFLAGS) $*.cpp > $*.d
 
+.PHONY: pviewer
+pviewer:
+	$(MAKE) $(MFLAGS) -C $(PVDIR)
+
 .PHONY: clean
 clean:
-	$(RM) $(TARGET) $(OBJECTS) $(DEPENDS)
+	$(RM) ray $(OBJECTS) $(DEPENDS)
+	$(MAKE) $(MFLAGS) -C $(PVDIR) clean
