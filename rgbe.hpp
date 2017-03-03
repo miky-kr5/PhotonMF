@@ -22,6 +22,6 @@
 #define RGBE_HPP
 
 extern void float2rgbe(unsigned char rgbe[4], float red, float green, float blue);
-extern void rgbe2float(float & red, float & green, float & blue, unsigned char rgbe[4]);
+extern void rgbe2float(float & red, float & green, float & blue, const unsigned char rgbe[4]);
   
 #endif

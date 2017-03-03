@@ -101,23 +101,25 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
       }
 
       // TODO: Change photon map search method for hemisphere search.
-      radius = m_h_radius;
-      mn = Vec3(i_pos.x - radius, i_pos.y - radius, i_pos.z - radius);
-      mx = Vec3(i_pos.x + radius, i_pos.y + radius, i_pos.z + radius);
+      // radius = m_h_radius;
+      // mn = Vec3(i_pos.x - radius, i_pos.y - radius, i_pos.z - radius);
+      // mx = Vec3(i_pos.x + radius, i_pos.y + radius, i_pos.z + radius);
 
-      while((photons =  m_photon_map.findInRange(mn, mx)).size() == 0 && radius < 5.0) {
-	radius *= 2;
-	mn = Vec3(i_pos.x - radius, i_pos.y - radius, i_pos.z - radius);
-	mx = Vec3(i_pos.x + radius, i_pos.y + radius, i_pos.z + radius);
-      }
+      // while((photons =  m_photon_map.findInRange(mn, mx)).size() == 0 && radius < 5.0) {
+      // 	radius *= 2;
+      // 	mn = Vec3(i_pos.x - radius, i_pos.y - radius, i_pos.z - radius);
+      // 	mx = Vec3(i_pos.x + radius, i_pos.y + radius, i_pos.z + radius);
+      // }
+      m_photon_map.find_by_distance(photons, i_pos, n, m_h_radius, 1000);
 
       for (vector<Photon>::iterator it = photons.begin(); it != photons.end(); it++) {
 	(*it).getColor(red, green, blue);
-	p_contrib += ((_f->m_mat->m_diffuse / pi<float>()) * vec3(red, green, blue)) / (pi<float>() * (radius * radius));
+	p_contrib += (_f->m_mat->m_diffuse / pi<float>()) * vec3(red, green, blue);
       }
-      
-      color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color) * (_f->m_mat->m_diffuse / pi<float>())) +
-					    (_f->m_mat->m_specular * dir_spec_color) + p_contrib);
+      p_contrib /= (1.0f / pi<float>()) / (m_h_radius * m_h_radius);
+      // color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color) * (_f->m_mat->m_diffuse / pi<float>())) +
+      //  					    (_f->m_mat->m_specular * dir_spec_color) + p_contrib);
+      color += p_contrib;
 
       // Determine the specular reflection color.
       if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
@@ -213,6 +215,7 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
   cout << endl;
 
   cout << "Generated " << ANSI_BOLD_YELLOW << m_photon_map.getNumPhotons() << ANSI_RESET_STYLE << " total photons." << endl;
+  m_photon_map.save_photon_list();
   cout << "Building photon map Kd-tree." << endl;
   m_photon_map.buildKdTree();
 }

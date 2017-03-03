@@ -48,7 +48,7 @@ void float2rgbe(unsigned char rgbe[4], float red, float green, float blue) {
 /* standard conversion from rgbe to float pixels */
 /* note: Ward uses ldexp(col+0.5,exp-(128+8)).  However we wanted pixels */
 /*       in the range [0,1] to map back into the range [0,1].            */
-void rgbe2float(float & red, float & green, float & blue, unsigned char rgbe[4]) {
+void rgbe2float(float & red, float & green, float & blue, const unsigned char rgbe[4]) {
   float f;
 
   if (rgbe[3]) {   /*nonzero pixel*/

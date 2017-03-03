@@ -1,10 +1,15 @@
-#include <cstdlib>
+#include <random>
+#include <chrono>
+#include <functional>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
 #include "sampling.hpp"
 
+using std::uniform_real_distribution;
+using std::mt19937;
+using std::bind;
 using glm::mat3;
 using glm::abs;
 using glm::normalize;
@@ -14,8 +19,15 @@ using glm::pi;
 
 const float PDF = (1.0f / (2.0f * pi<float>()));
 
+static bool seeded = false;
+static uniform_real_distribution<float> dist(0, 1);
+static mt19937 engine;
+static auto generator = bind(dist, engine);
+
 float random01() {
-  return static_cast<float>(rand() % 1024) / 1025.0f;
+  if (!seeded)
+    engine.seed(std::chrono::system_clock::now().time_since_epoch().count());
+  return generator();
 }
 
 vec2 sample_pixel(int i, int j, float w, float h, float a_ratio, float fov) {

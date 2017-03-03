@@ -1,18 +1,14 @@
 #include <iostream>
-#ifndef NDEBUG
 #include <fstream>
-#endif
 #include <queue>
 
 #include <omp.h>
+#include <glm/gtc/constants.hpp>
 
 #include "kd_tree.hpp"
 
-#ifndef NDEBUG
 using std::ofstream;
 using std::ios;
-#endif
-
 using std::cout;
 using std::endl;
 
@@ -334,20 +330,9 @@ bool kdTree::buildKdTree()
     }
 
   cout << "Adding photons to the tree." << endl;
-  createNodeKdTree(&root, Photons , xyz, yzx, zxy, XYZ, 0, size, xyz_aux, yzx_aux, zxy_aux);
+  //createNodeKdTree(&root, Photons , xyz, yzx, zxy, XYZ, 0, size, xyz_aux, yzx_aux, zxy_aux);
 
   //printTree();
-
-#ifndef NDEBUG
-  cout << "Writing photons to \x1b[1;33mphotons.txt\x1b[m" << endl;
-  ofstream ofs("photons.txt", ios::out);
-  float r, g, b;
-  for (std::vector<Photon>::iterator it = Photons.begin(); it != Photons.end(); it++) {
-    rgbe2float(r, g, b, (*it).radiance);
-    ofs << (*it).position.x << " " << (*it).position.y << " " << (*it).position.z << " " << r << " " << g << " " << b << endl;
-  }
-  ofs.close();
-#endif
 
   // delete[] xyz;
   // delete[] yzx;
@@ -413,4 +398,27 @@ void kdTree::findInRange (Vec3 min, Vec3 max, std::vector<Photon> &photons, tree
 
 size_t kdTree::getNumPhotons() {
   return Photons.size();
+}
+
+void kdTree::save_photon_list() const {
+  cout << "Writing photons to \x1b[1;33mphotons.txt\x1b[m" << endl;
+  ofstream ofs("photons.txt", ios::out);
+  float r, g, b;
+  for (std::vector<Photon>::const_iterator it = Photons.begin(); it != Photons.end(); it++) {
+    rgbe2float(r, g, b, (*it).radiance);
+    ofs << (*it).position.x << " " << (*it).position.y << " " << (*it).position.z << " " << r << " " << g << " " << b << endl;
+  }
+  ofs.close();
+}
+
+void kdTree::find_by_distance(std::vector<Photon> & found, const glm::vec3 & point, const glm::vec3 & normal, const float distance, const unsigned int max) const {
+  glm::vec3 p_pos;
+  found.clear();
+  for (std::vector<Photon>::const_iterator it = Photons.begin(); it != Photons.end(); it++) {
+    p_pos = glm::vec3((*it).position.x, (*it).position.y, (*it).position.z);
+    if (glm::distance(p_pos, point) < distance && glm::dot(glm::normalize(p_pos - point), normal) < glm::pi<float>() / 2.0f)
+      found.push_back((*it));
+    if (found.size() >= max)
+      break;
+  }
 }

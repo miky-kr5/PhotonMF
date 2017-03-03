@@ -1,6 +1,7 @@
 #include <vector>
 #include <limits>
 #include <iostream>
+#include <glm/glm.hpp>
 
 #include "rgbe.hpp"
 
@@ -153,7 +154,8 @@ public:
   bool buildKdTree();
   void printTree();
   std::vector<Photon> findInRange (Vec3 min, Vec3 max) const;
-
+  void find_by_distance(std::vector<Photon> & found, const glm::vec3 & point, const glm::vec3 & normal, const float distance, const unsigned int max) const;
+  void save_photon_list() const;
   size_t getNumPhotons();
   
 private:
