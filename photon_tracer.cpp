@@ -12,6 +12,8 @@
 #include "photon_tracer.hpp"
 #include "sampling.hpp"
 #include "area_light.hpp"
+#include "directional_light.hpp"
+#include "spot_light.hpp"
 
 using std::cout;
 using std::cerr;
@@ -164,7 +166,8 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 
 void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, const bool specular) {
   Light * l;
-  AreaLight * al;
+  AreaLight * al = NULL;
+  PointLight * pl = NULL;
   vec3 l_sample, s_normal, h_sample, power;
   Vec3 ls, dir;
   float r1, r2;
@@ -173,52 +176,86 @@ void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, c
   vector<Figure *> spec_figures;
 
   for (vector<Light *>::iterator it = s->m_lights.begin(); it != s->m_lights.end(); it++) {
-    total += (*it)->light_type() == Light::AREA ? 1 : 0;
+    total += (*it)->light_type() == Light::AREA ||
+      ((*it)->light_type() == Light::INFINITESIMAL &&
+       (dynamic_cast<SpotLight *>((*it)) == NULL || dynamic_cast<DirectionalLight *>((*it)) == NULL)) ? 1 : 0;
   }
   total *= static_cast<uint64_t>(n_photons_per_ligth);
 
-  cout << "Tracing a total of " << ANSI_BOLD_YELLOW << total << ANSI_RESET_STYLE << " primary photons:" << endl;
-
+  // Separate specular objects to build the caustics photon map.
   if (specular) {
     for (vector<Figure *>::iterator it = s->m_figures.begin(); it != s->m_figures.end(); it++)
       if ((*it)->m_mat->m_refract || (*it)->m_mat->m_rho > 0.0f)
 	spec_figures.push_back((*it));
+
+    if (spec_figures.size() == 0) {
+      cout << ANSI_BOLD_YELLOW  << "There are no specular objects in the scene." << ANSI_RESET_STYLE << endl;
+      cout << ANSI_BOLD_YELLOW  << "Skipping caustics photon map." << ANSI_RESET_STYLE << endl;
+      return;
+    } else
+      cout << "There " << (spec_figures.size() == 1 ? "is " : "are ") << ANSI_BOLD_YELLOW << spec_figures.size() << ANSI_RESET_STYLE <<
+	" specular " << (spec_figures.size() == 1 ? "object" : "objects") << " in the scene." << endl;
   }
-  
+
+  cout << "Tracing a total of " << ANSI_BOLD_YELLOW << total << ANSI_RESET_STYLE << " primary photons:" << endl;
   for (vector<Light *>::iterator it = s->m_lights.begin(); it != s->m_lights.end(); it++) {
     l = *it;
 
-    /* Only area lights supported right now. */
-    if (l->light_type() != Light::AREA)
+    /* Only area lights and point lights supported right now. */
+    if (l->light_type() == Light::INFINITESIMAL && (dynamic_cast<SpotLight *>(l) != NULL || dynamic_cast<DirectionalLight *>(l) != NULL))
       continue;
 
-    al = static_cast<AreaLight *>(l);
-      
+    if (l->light_type() == Light::AREA)
+      al = static_cast<AreaLight *>(l);
+    else
+      pl = static_cast<PointLight *>(l);
+
+    assert(pl != NULL || al != NULL);
+    
 #pragma omp parallel for schedule(dynamic, 1) private(l_sample, s_normal, h_sample, r1, r2) shared(current)
     for (size_t p = 0; p < n_photons_per_ligth; p++) {
-      l_sample = al->sample_at_surface();
-      s_normal = al->normal_at_last_sample();
+      if (al != NULL) {
+	l_sample = al->sample_at_surface();
+	s_normal = al->normal_at_last_sample();
 	
-      if (!specular || spec_figures.size() == 0) {
-	// Generate photon from light source in random direction.
-	r1 = random01();
-	r2 = random01();
-	h_sample = normalize(sample_hemisphere(r1, r2));
-	rotate_sample(h_sample, s_normal);
-      } else {
-	// Generate photon from light source in direction of specular reflective objects.
-	h_sample = normalize(spec_figures[p % spec_figures.size()]->sample_at_surface() - l_sample);
-      }
+	if (!specular || (specular && spec_figures.size() == 0)) {
+	  // Generate photon from light source in random direction.
+	  r1 = random01();
+	  r2 = random01();
+	  h_sample = normalize(sample_hemisphere(r1, r2));
+	  rotate_sample(h_sample, s_normal);
+	} else {
+	  // Generate photon from light source in direction of specular reflective objects.
+	  h_sample = spec_figures[p % spec_figures.size()]->sample_at_surface();
+	  h_sample = normalize(h_sample - l_sample);
+	}
 
-      // Create the primary photon.
-      ls = Vec3(l_sample.x, l_sample.y, l_sample.z);
-      dir = Vec3(h_sample.x, h_sample.y, h_sample.z);
-      power = (al->m_figure->m_mat->m_emission / static_cast<float>(n_photons_per_ligth)) / (al->m_figure->pdf());
-      ph = Photon(ls, dir, power.r, power.g, power.b, 1.0f);
-      
+	// Create the primary photon.
+	ls = Vec3(l_sample.x, l_sample.y, l_sample.z);
+	dir = Vec3(h_sample.x, h_sample.y, h_sample.z);
+	power = (al->m_figure->m_mat->m_emission / static_cast<float>(n_photons_per_ligth));
+	ph = Photon(ls, dir, power.r, power.g, power.b, 1.0f);
+
 #pragma omp critical
-      {
-	m_photon_map.addPhoton(ph);
+	{
+	  m_photon_map.addPhoton(ph);
+	}
+	
+      } else if (pl != NULL) {
+	l_sample = glm::vec3(pl->m_position.x, pl->m_position.y, pl->m_position.z);
+
+	if (!specular || (specular && spec_figures.size() == 0)) {
+
+	} else {
+	  // Generate photon from light source in direction of specular reflective objects.
+	  h_sample = spec_figures[p % spec_figures.size()]->sample_at_surface();
+	  h_sample = normalize(h_sample - l_sample);
+	}
+
+	ls = Vec3(l_sample.x, l_sample.y, l_sample.z);
+	dir = Vec3(h_sample.x, h_sample.y, h_sample.z);
+	power = (pl->m_diffuse / static_cast<float>(n_photons_per_ligth));
+	ph = Photon(ls, dir, power.r, power.g, power.b, 1.0f);
       }
 
       trace_photon(ph, s, 0);
