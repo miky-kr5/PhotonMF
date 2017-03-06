@@ -13,9 +13,9 @@ public:
   virtual ~PhotonTracer();
   virtual vec3 trace_ray(Ray & r, Scene * s, unsigned int rec_level) const;
 
-  void build_photon_map(Scene * s, const size_t n_photons_per_ligth = 10000, const bool specular = false);
+  void photon_tracing(Scene * s, const size_t n_photons_per_ligth = 10000, const bool specular = false);
   void build_photon_map(const char * photons_file);
-
+  void build_photon_map();
 private:
   float m_h_radius;
   kdTree m_photon_map;

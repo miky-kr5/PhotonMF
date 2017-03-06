@@ -162,7 +162,7 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
     return s->m_env->get_color(r);
 }
 
-void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth, const bool specular) {
+void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, const bool specular) {
   Light * l;
   AreaLight * al;
   vec3 l_sample, s_normal, h_sample, power;
@@ -170,6 +170,7 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
   float r1, r2;
   Photon ph;
   uint64_t total = 0, current = 0;
+  vector<Figure *> spec_figures;
 
   for (vector<Light *>::iterator it = s->m_lights.begin(); it != s->m_lights.end(); it++) {
     total += (*it)->light_type() == Light::AREA ? 1 : 0;
@@ -177,6 +178,12 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
   total *= static_cast<uint64_t>(n_photons_per_ligth);
 
   cout << "Tracing a total of " << ANSI_BOLD_YELLOW << total << ANSI_RESET_STYLE << " primary photons:" << endl;
+
+  if (specular) {
+    for (vector<Figure *>::iterator it = s->m_figures.begin(); it != s->m_figures.end(); it++)
+      if ((*it)->m_mat->m_refract || (*it)->m_mat->m_rho > 0.0f)
+	spec_figures.push_back((*it));
+  }
   
   for (vector<Light *>::iterator it = s->m_lights.begin(); it != s->m_lights.end(); it++) {
     l = *it;
@@ -189,22 +196,25 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
       
 #pragma omp parallel for schedule(dynamic, 1) private(l_sample, s_normal, h_sample, r1, r2) shared(current)
     for (size_t p = 0; p < n_photons_per_ligth; p++) {
-      if (!specular) {
-	l_sample = al->sample_at_surface();
-	s_normal = al->normal_at_last_sample();
-
+      l_sample = al->sample_at_surface();
+      s_normal = al->normal_at_last_sample();
+	
+      if (!specular || spec_figures.size() == 0) {
+	// Generate photon from light source in random direction.
 	r1 = random01();
 	r2 = random01();
 	h_sample = normalize(sample_hemisphere(r1, r2));
 	rotate_sample(h_sample, s_normal);
-	ls = Vec3(l_sample.x, l_sample.y, l_sample.z);
-	dir = Vec3(h_sample.x, h_sample.y, h_sample.z);
-	power = (al->m_figure->m_mat->m_emission / static_cast<float>(n_photons_per_ligth)) / (al->m_figure->pdf());
-	ph = Photon(ls, dir, power.r, power.g, power.b, 1.0f);
-
       } else {
-	// TODO: Generate photon from light source in direction of specular reflective objects.
+	// Generate photon from light source in direction of specular reflective objects.
+	h_sample = normalize(spec_figures[p % spec_figures.size()]->sample_at_surface() - l_sample);
       }
+
+      // Create the primary photon.
+      ls = Vec3(l_sample.x, l_sample.y, l_sample.z);
+      dir = Vec3(h_sample.x, h_sample.y, h_sample.z);
+      power = (al->m_figure->m_mat->m_emission / static_cast<float>(n_photons_per_ligth)) / (al->m_figure->pdf());
+      ph = Photon(ls, dir, power.r, power.g, power.b, 1.0f);
       
 #pragma omp critical
       {
@@ -220,11 +230,6 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
     cout << "\r" << setw(3) << static_cast<size_t>((static_cast<double>(current) / static_cast<double>(total)) * 100.0) << "% done.";
   }
   cout << endl;
-
-  cout << "Generated " << ANSI_BOLD_YELLOW << m_photon_map.getNumPhotons() << ANSI_RESET_STYLE << " total photons." << endl;
-  m_photon_map.save_photon_list();
-  cout << "Building photon map Kd-tree." << endl;
-  m_photon_map.buildKdTree();
 }
 
 void PhotonTracer::build_photon_map(const char * photons_file) {
@@ -247,6 +252,12 @@ void PhotonTracer::build_photon_map(const char * photons_file) {
 
   ifs.close();
 
+  build_photon_map();
+}
+
+void PhotonTracer::build_photon_map() {
+  cout << "Generated " << ANSI_BOLD_YELLOW << m_photon_map.getNumPhotons() << ANSI_RESET_STYLE << " total photons." << endl;
+  m_photon_map.save_photon_list();
   cout << "Building photon map Kd-tree." << endl;
   m_photon_map.buildKdTree();
 }
@@ -279,16 +290,12 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
     n = _f->normal_at_int(r, t);
 
     // Store the diffuse photon and trace.
-    if (!_f->m_mat->m_refract && rec_level < m_max_depth){
-      if (rec_level < m_max_depth) {
-	r1 = random01();
-	r2 = random01();
-	sample = sample_hemisphere(r1, r2);
-	rotate_sample(sample, n);
-	normalize(sample);
-      } else
-	sample = vec3(0.0f);
-
+    if (!_f->m_mat->m_refract){
+      r1 = random01();
+      r2 = random01();
+      sample = sample_hemisphere(r1, r2);
+      rotate_sample(sample, n);
+      normalize(sample);
       ph.getColor(red, green, blue);
       color = (1.0f - _f->m_mat->m_rho) * (vec3(red, green, blue) * (_f->m_mat->m_diffuse / pi<float>()));
       p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
@@ -299,7 +306,8 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
 	m_photon_map.addPhoton(photon);
       }
 
-      trace_photon(photon, s, rec_level + 1);
+      if (rec_level < m_max_depth)
+	trace_photon(photon, s, rec_level + 1);
     }
 
     // Trace the reflected photon.
@@ -312,12 +320,12 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
       photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
       trace_photon(photon, s, rec_level + 1);
 
-    } else if (_f->m_mat->m_refract && rec_level >= m_max_depth) {
+    } else if (_f->m_mat->m_refract && rec_level < m_max_depth) {
       // If the material has transmission enabled, calculate the Fresnel term.
-      kr = fresnel(r.m_direction, n, r.m_ref_index, _f->m_mat->m_ref_index);
+      kr = fresnel(r.m_direction, n, ph.ref_index, _f->m_mat->m_ref_index);
 
       // Trace the reflected photon.
-      if (kr > 0.0f && rec_level < m_max_depth) {
+      if (kr > 0.0f) {
 	color = kr * vec3(red, green, blue);
 	i_pos += n * BIAS;
 	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
@@ -328,7 +336,7 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
       }
 
       // Trace the transmitted photon.
-      if (_f->m_mat->m_refract && kr < 1.0f && rec_level < m_max_depth) {
+      if (kr < 1.0f) {
 	color = (1.0f - kr) * vec3(red, green, blue);
 	i_pos -= n * (2 * BIAS);
 	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);

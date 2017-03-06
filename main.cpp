@@ -114,8 +114,11 @@ int main(int argc, char ** argv) {
     cout << "Using " << ANSI_BOLD_YELLOW << "Jensen's photon mapping" << ANSI_RESET_STYLE << " with ray tracing." << endl;
     p_tracer = new PhotonTracer(g_max_depth, g_p_sample_radius);
     if (g_photons_file == NULL) {
-      cout << "Building photon map with " << ANSI_BOLD_YELLOW << g_photons << ANSI_RESET_STYLE << " primary photons per light source." << endl;
-      p_tracer->build_photon_map(scn, g_photons, false);
+      //cout << "Building global photon map with " << ANSI_BOLD_YELLOW << g_photons / 2 << ANSI_RESET_STYLE << " primary photons per light source." << endl;
+      //p_tracer->photon_tracing(scn, g_photons / 2);
+      cout << "Building caustics photon map with " << ANSI_BOLD_YELLOW << g_photons / 2 << ANSI_RESET_STYLE << " primary photons per light source." << endl;
+      p_tracer->photon_tracing(scn, g_photons / 2, true);
+      p_tracer->build_photon_map();
     } else {
       p_tracer->build_photon_map(g_photons_file);
     }
