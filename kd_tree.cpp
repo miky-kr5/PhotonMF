@@ -334,14 +334,14 @@ bool kdTree::buildKdTree()
 
   //printTree();
 
-  // delete[] xyz;
-  // delete[] yzx;
-  // delete[] zxy;
-  // delete[] xyz_aux;
-  // delete[] xyz_aux2;
-  // delete[] xyz_aux3;
-  // delete[] yzx_aux;
-  // delete[] zxy_aux;
+  delete[] xyz;
+  delete[] yzx;
+  delete[] zxy;
+  delete[] xyz_aux;
+  delete[] xyz_aux2;
+  delete[] xyz_aux3;
+  delete[] yzx_aux;
+  delete[] zxy_aux;
   
   return true;
 }
@@ -406,7 +406,9 @@ void kdTree::save_photon_list() const {
   float r, g, b;
   for (std::vector<Photon>::const_iterator it = Photons.begin(); it != Photons.end(); it++) {
     rgbe2float(r, g, b, (*it).radiance);
-    ofs << (*it).position.x << " " << (*it).position.y << " " << (*it).position.z << " " << r << " " << g << " " << b << endl;
+    ofs << (*it).position.x << " " << (*it).position.y << " " << (*it).position.z << " " <<
+      (*it).direction.x << " " << (*it).direction.y << " " << (*it).direction.z << " " <<
+      (*it).r << " " << (*it).g << " " << (*it).b << " " << (*it).ref_index << endl;
   }
   ofs.close();
 }

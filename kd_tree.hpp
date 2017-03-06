@@ -19,6 +19,12 @@ struct Vec3
   float z;
 
   Vec3(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f): x(_x), y(_y), z(_z) { }
+
+  Vec3(const Vec3 & other) {
+    x = other.x;
+    y = other.y;
+    z = other.z;
+  }
   
   inline bool equalFloat(const float x, const float y)
   {
@@ -47,11 +53,15 @@ struct Photon
   Vec3 direction;
   float ref_index;
   unsigned char radiance[4];
+  float r, g, b;
 
   Photon(Vec3 _p = Vec3(), Vec3 _d = Vec3(), float red = 0.0f, float green = 0.0f, float blue = 0.0f, float _r = 1.0f):
     position(_p),
     direction(_d),
-    ref_index(_r)
+    ref_index(_r),
+    r(red),
+    g(green),
+    b(blue)
   {
     float2rgbe(radiance, red, green, blue);
   }
@@ -64,7 +74,7 @@ struct Photon
   {
     return (x - std::numeric_limits<float>::epsilon() <= y) && (x + std::numeric_limits<float>::epsilon() >= y);
   }
-
+  
   inline bool operator==(const Photon p)
   {
     return equalFloat(position.x, p.position.x) && equalFloat(position.y, p.position.y) && equalFloat(position.z, p.position.z);

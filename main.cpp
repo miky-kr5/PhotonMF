@@ -48,6 +48,7 @@ static const char * OUT_FILE = "output.png";
 typedef enum TRACERS { NONE, WHITTED, MONTE_CARLO, JENSEN } tracer_t;
 
 static char * g_input_file = NULL;
+static char * g_photons_file = NULL;
 static char * g_out_file_name = NULL;
 static int g_samples = 25;
 static float g_fov = 45.0f;
@@ -112,8 +113,12 @@ int main(int argc, char ** argv) {
   } else if(g_tracer == JENSEN) {
     cout << "Using " << ANSI_BOLD_YELLOW << "Jensen's photon mapping" << ANSI_RESET_STYLE << " with ray tracing." << endl;
     p_tracer = new PhotonTracer(g_max_depth, g_p_sample_radius);
-    cout << "Building photon map with " << ANSI_BOLD_YELLOW << g_photons << ANSI_RESET_STYLE << " primary photons per light source." << endl;
-    p_tracer->build_photon_map(scn, g_photons, false);
+    if (g_photons_file == NULL) {
+      cout << "Building photon map with " << ANSI_BOLD_YELLOW << g_photons << ANSI_RESET_STYLE << " primary photons per light source." << endl;
+      p_tracer->build_photon_map(scn, g_photons, false);
+    } else {
+      p_tracer->build_photon_map(g_photons_file);
+    }
     tracer = static_cast<Tracer *>(p_tracer);
     
   } else {
@@ -233,6 +238,9 @@ void print_usage(char ** const argv) {
   cerr << "    \tDefaults to 15000." << endl;
   cerr << "  -h\tHemisphere radius for photon map sampling (> 0)." << endl;
   cerr << "    \tDefaults to 0.01f ." << endl;
+  cerr << "  -k\tFile with photon definitions." << endl;
+  cerr << "    \tSkips the photon tracing step using" << endl;
+  cerr << "    \tthe photons defined in the specified file." << endl;
 }
 
 void parse_args(int argc, char ** const argv) {
@@ -246,7 +254,7 @@ void parse_args(int argc, char ** const argv) {
     exit(EXIT_FAILURE);
   }
 
-  while((opt = getopt(argc, argv, "-:t:s:w:f:o:r:g:e:p:h:")) != -1) {
+  while((opt = getopt(argc, argv, "-:t:s:w:f:o:r:g:e:p:h:k:")) != -1) {
     switch (opt) {
     case 1:
       g_input_file = (char *)malloc((strlen(optarg) + 1) * sizeof(char));
@@ -356,6 +364,11 @@ void parse_args(int argc, char ** const argv) {
 	exit(EXIT_FAILURE);
       }
 
+      break;
+
+    case 'k':
+      g_photons_file = (char *)malloc((strlen(optarg) + 1) * sizeof(char));
+      strcpy(g_photons_file, optarg);
       break;
 
     case ':':

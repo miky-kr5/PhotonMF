@@ -40,18 +40,29 @@ void idle(void);
 void render_scene(void);
 void clean_up(void);
 
-void build_dlist() {
+void build_dlist(const char * file_name, int color_multiplier) {
+  ifstream ifs(file_name, ios::in);
+
+  if (!ifs.is_open()) {
+    cerr << "Failed to open the file " << file_name << " for reading." << endl;
+    exit(EXIT_FAILURE);
+  }
+  
   dlist = glGenLists(1);
   glNewList(dlist, GL_COMPILE); {
     glBegin(GL_POINTS); {
-      for (vector<pair<glm::vec3, glm::vec3>>::iterator it = photons.begin(); it != photons.end(); it++) {
-	glColor3f((*it).second.r, (*it).second.g, (*it).second.b);
-	glVertex3f((*it).first.x, (*it).first.y, (*it).first.z);
+      while (!ifs.eof()) {
+	float x, y, z, dx, dy, dz, r, g, b, rc;
+	ifs >> x >> y >> z >> dx >> dy >> dz >> r >> g >> b >> rc;
+	glColor3f(color_multiplier * r, color_multiplier * g, color_multiplier * b);
+	glVertex3f(x, y, z);
       }
     }
     glEnd();
   }
   glEndList();
+
+  ifs.close();
 }
 
 int main(int argc, char ** argv) {
@@ -60,25 +71,10 @@ int main(int argc, char ** argv) {
   ferr  = freopen("stderr.txt", "w", stderr);
 #endif
 
-  if (argc < 2) {
-    cerr << "USAGE: " << argv[0] << " FILE" << endl;
+  if (argc < 3) {
+    cerr << "USAGE: " << argv[0] << " FILE MULTIPLIER" << endl;
     return EXIT_FAILURE;
   }
-
-  ifstream ifs(argv[1], ios::in);
-
-  if (!ifs.is_open()) {
-    cerr << "Failed to open the file " << argv[1] << " for reading." << endl;
-    return EXIT_FAILURE;
-  }
-
-  while (!ifs.eof()) {
-    float x, y, z, r, g, b;
-    ifs >> x >> y >> z >> r >> g >> b;
-    photons.push_back(pair<glm::vec3, glm::vec3>(glm::vec3(x, y, z), glm::vec3(r, g, b)));
-  }
-
-  ifs.close();
   
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
@@ -92,7 +88,8 @@ int main(int argc, char ** argv) {
 
   atexit(clean_up);
   init_gl();
-	
+  build_dlist(argv[1], atoi(argv[2]));
+
   glutMainLoop();
 
   return 0;
@@ -102,12 +99,6 @@ void init_gl(void) {
   /* Enable back-face culling. */
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
-
-  /* Enable lightning. */
-  glEnable(GL_LIGHTING);
-  glEnable(GL_LIGHT0);
-  glEnable(GL_NORMALIZE);
-  glShadeModel(GL_SMOOTH);
 
   /* Enable textures. */
   glEnable(GL_TEXTURE_2D);
@@ -122,8 +113,6 @@ void init_gl(void) {
 
   /* Hide the mouse pointer. */
   glutSetCursor(GLUT_CURSOR_NONE);
-
-  build_dlist();
 }
 
 void reshape(int _w, int _h) {

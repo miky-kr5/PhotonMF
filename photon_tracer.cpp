@@ -1,8 +1,11 @@
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <limits>
 #include <vector>
+#include <utility>
 #include <cstdint>
+#include <cstdlib>
 
 #include <glm/gtc/constants.hpp>
 
@@ -11,9 +14,13 @@
 #include "area_light.hpp"
 
 using std::cout;
+using std::cerr;
 using std::endl;
+using std::ifstream;
+using std::ios;
 using std::setw;
 using std::vector;
+using std::pair;
 using std::numeric_limits;
 using namespace glm;
 
@@ -216,6 +223,30 @@ void PhotonTracer::build_photon_map(Scene * s, const size_t n_photons_per_ligth,
 
   cout << "Generated " << ANSI_BOLD_YELLOW << m_photon_map.getNumPhotons() << ANSI_RESET_STYLE << " total photons." << endl;
   m_photon_map.save_photon_list();
+  cout << "Building photon map Kd-tree." << endl;
+  m_photon_map.buildKdTree();
+}
+
+void PhotonTracer::build_photon_map(const char * photons_file) {
+  Photon ph;
+  float x, y, z, dx, dy, dz, r, g, b, rc;
+  ifstream ifs(photons_file, ios::in);
+
+  if (!ifs.is_open()) {
+    cerr << "Failed to open the file " << photons_file << " for reading." << endl;
+    exit(EXIT_FAILURE);
+  }
+
+  cout << "Reading photon definitions from " << ANSI_BOLD_YELLOW << photons_file << ANSI_RESET_STYLE << "." << endl;
+  while (!ifs.eof()) {
+    ifs >> x >> y >> z >> dx >> dy >> dz >> r >> g >> b >> rc;
+    ph = Photon(Vec3(x, y, z), Vec3(dx, dy, dz), r, g, b, rc);
+    m_photon_map.addPhoton(ph);
+  }
+  cout << "Read " << ANSI_BOLD_YELLOW << m_photon_map.getNumPhotons() << ANSI_RESET_STYLE << " photons from the file." << endl;
+
+  ifs.close();
+
   cout << "Building photon map Kd-tree." << endl;
   m_photon_map.buildKdTree();
 }

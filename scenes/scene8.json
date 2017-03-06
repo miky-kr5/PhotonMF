@@ -1,0 +1,39 @@
+{
+    "environment": {
+	"color": [0.0, 0.0, 0.0]
+    },
+
+    "camera": {
+	"eye": [2.0, 0.0, 0.0],
+	"look": [-1.0, -0.5, 0.0],
+	"left": [0.0, 0.0, 1.0],
+	"translation": [1.0, 0.0, 0.0]
+    },
+
+    "sphere":{
+	"position": [0.0, 0.0, 0.0],
+	"radius": 1.0,
+	"material": {
+	    "diffuse": [0.0, 0.25, 1.0],
+	    "rho": 0.2
+	}
+    },
+
+    "sphere_area_light":{
+	"position": [0.0, 0.0, -15.0],
+	"radius": 10.0,
+	"material": {
+            "emission": [10.0, 10.0, 10.0]
+	}
+    },
+
+    "disk": {
+	"position": [0, -1.0, 0],
+	"normal": [0.0, 1.0, 0.0],
+	"radius": 2.0,
+	"material": {
+	    "diffuse": [1.0, 1.0, 1.0],
+	    "specular": [0.0, 0.0, 0.0]
+	}
+    }
+}
