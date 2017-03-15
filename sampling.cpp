@@ -70,3 +70,19 @@ void rotate_sample(vec3 & sample, const vec3 & n) {
 		sample.x * nb.y + sample.y * n.y + sample.z * nt.y,
 		sample.x * nb.z + sample.y * n.z + sample.z * nt.z);
 }
+
+vec3 sample_sphere(const vec3 center, const float radius) {
+  float theta;
+  float u, sqrt1muu, x, y, z;
+
+  // Sampling formula from Wolfram Mathworld:
+  // http://mathworld.wolfram.com/SpherePointPicking.html
+  theta = random01()* (2.0f * pi<float>());
+  u = (random01() * 2.0f) - 1.0f;
+  sqrt1muu = glm::sqrt(1.0f - (u * u));
+  x = radius * sqrt1muu * cos(theta);
+  y = radius * sqrt1muu * sin(theta);
+  z = radius * u;
+
+  return vec3(vec3(x, y, z) + center);
+}

@@ -136,10 +136,8 @@ kdTree::~kdTree(){}
 
 void kdTree::addPhoton(Photon p)
 {
-  
   Photons.push_back(p);
 }
-
 
 void kdTree::createNodeKdTree(treeNode** node, std::vector<Photon> & originalData , int* xyz, int* yzx, int* zxy, superKey key, int begin, int end, int* xyz_2, int* yzx_2, int* zxy_2)
 {
@@ -400,9 +398,9 @@ size_t kdTree::getNumPhotons() {
   return Photons.size();
 }
 
-void kdTree::save_photon_list() const {
-  cout << "Writing photons to \x1b[1;33mphotons.txt\x1b[m" << endl;
-  ofstream ofs("photons.txt", ios::out);
+void kdTree::save_photon_list(const char * file_name) const {
+  cout << "Writing photons to \x1b[1;33m" << file_name << "\x1b[m" << endl;
+  ofstream ofs(file_name, ios::out);
   float r, g, b;
   for (std::vector<Photon>::const_iterator it = Photons.begin(); it != Photons.end(); it++) {
     rgbe2float(r, g, b, (*it).radiance);

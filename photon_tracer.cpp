@@ -217,6 +217,7 @@ void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, c
       if (al != NULL) {
 	l_sample = al->sample_at_surface();
 	s_normal = al->normal_at_last_sample();
+	l_sample = l_sample + (BIAS * s_normal);
 	
 	if (!specular || (specular && spec_figures.size() == 0)) {
 	  // Generate photon from light source in random direction.
@@ -225,39 +226,30 @@ void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, c
 	  h_sample = normalize(sample_hemisphere(r1, r2));
 	  rotate_sample(h_sample, s_normal);
 	} else {
-	  // Generate photon from light source in direction of specular reflective objects.
-	  h_sample = spec_figures[p % spec_figures.size()]->sample_at_surface();
-	  h_sample = normalize(h_sample - l_sample);
+	  // Generate photon from light source in the direction of specular reflective objects.
+	  h_sample = normalize(spec_figures[p % spec_figures.size()]->sample_at_surface() - l_sample);
 	}
 
 	// Create the primary photon.
-	ls = Vec3(l_sample.x, l_sample.y, l_sample.z);
-	dir = Vec3(h_sample.x, h_sample.y, h_sample.z);
 	power = (al->m_figure->m_mat->m_emission / static_cast<float>(n_photons_per_ligth));
-	ph = Photon(ls, dir, power.r, power.g, power.b, 1.0f);
-
-#pragma omp critical
-	{
-	  m_photon_map.addPhoton(ph);
-	}
 	
       } else if (pl != NULL) {
 	l_sample = glm::vec3(pl->m_position.x, pl->m_position.y, pl->m_position.z);
 
 	if (!specular || (specular && spec_figures.size() == 0)) {
-
+	  h_sample = normalize(sample_sphere(l_sample, 1.0f) - l_sample);
 	} else {
-	  // Generate photon from light source in direction of specular reflective objects.
-	  h_sample = spec_figures[p % spec_figures.size()]->sample_at_surface();
-	  h_sample = normalize(h_sample - l_sample);
+	  // Generate photon from light source in the direction of specular reflective objects.
+	  h_sample = normalize(spec_figures[p % spec_figures.size()]->sample_at_surface() - l_sample);
 	}
 
-	ls = Vec3(l_sample.x, l_sample.y, l_sample.z);
-	dir = Vec3(h_sample.x, h_sample.y, h_sample.z);
 	power = (pl->m_diffuse / static_cast<float>(n_photons_per_ligth));
-	ph = Photon(ls, dir, power.r, power.g, power.b, 1.0f);
       }
 
+      ls = Vec3(l_sample.x, l_sample.y, l_sample.z);
+      dir = Vec3(h_sample.x, h_sample.y, h_sample.z);
+      ph = Photon(ls, dir, power.r, power.g, power.b, 1.0f);
+      
       trace_photon(ph, s, 0);
 
 #pragma omp atomic
@@ -267,9 +259,12 @@ void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, c
     cout << "\r" << setw(3) << static_cast<size_t>((static_cast<double>(current) / static_cast<double>(total)) * 100.0) << "% done.";
   }
   cout << endl;
+
+  cout << "Generated " << ANSI_BOLD_YELLOW << m_photon_map.getNumPhotons() << ANSI_RESET_STYLE << " total photons." << endl;
+  m_photon_map.save_photon_list(specular ? "caustics.txt" : "photons.txt");
 }
 
-void PhotonTracer::build_photon_map(const char * photons_file) {
+void PhotonTracer::build_photon_map(const char * photons_file, const bool caustics) {
   Photon ph;
   float x, y, z, dx, dy, dz, r, g, b, rc;
   ifstream ifs(photons_file, ios::in);
@@ -289,14 +284,15 @@ void PhotonTracer::build_photon_map(const char * photons_file) {
 
   ifs.close();
 
-  build_photon_map();
+  build_photon_map(caustics);
 }
 
-void PhotonTracer::build_photon_map() {
-  cout << "Generated " << ANSI_BOLD_YELLOW << m_photon_map.getNumPhotons() << ANSI_RESET_STYLE << " total photons." << endl;
-  m_photon_map.save_photon_list();
+void PhotonTracer::build_photon_map(const bool caustics) {
   cout << "Building photon map Kd-tree." << endl;
-  m_photon_map.buildKdTree();
+  if (!caustics)
+    m_photon_map.buildKdTree();
+  else
+    m_caustics_map.buildKdTree();
 }
 
 void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_level) {
@@ -328,6 +324,11 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
 
     // Store the diffuse photon and trace.
     if (!_f->m_mat->m_refract){
+#pragma omp critical
+      {
+	m_photon_map.addPhoton(ph);
+      }
+      
       r1 = random01();
       r2 = random01();
       sample = sample_hemisphere(r1, r2);
@@ -338,24 +339,19 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
       p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
       p_dir = Vec3(sample.x, sample.y, sample.z);
       photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
-#pragma omp critical
-      {
-	m_photon_map.addPhoton(photon);
-      }
 
       if (rec_level < m_max_depth)
 	trace_photon(photon, s, rec_level + 1);
-    }
 
-    // Trace the reflected photon.
-    if (!_f->m_mat->m_refract && _f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
-      color = (_f->m_mat->m_rho) * vec3(red, green, blue);
-      i_pos += n * BIAS;
-      p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
-      ph_dir = normalize(reflect(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n));
-      p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
-      photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
-      trace_photon(photon, s, rec_level + 1);
+      if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
+	color = (_f->m_mat->m_rho) * vec3(red, green, blue);
+	i_pos += n * BIAS;
+	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
+	ph_dir = normalize(reflect(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n));
+	p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
+	photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
+	trace_photon(photon, s, rec_level + 1);
+      }
 
     } else if (_f->m_mat->m_refract && rec_level < m_max_depth) {
       // If the material has transmission enabled, calculate the Fresnel term.

@@ -14,11 +14,12 @@ public:
   virtual vec3 trace_ray(Ray & r, Scene * s, unsigned int rec_level) const;
 
   void photon_tracing(Scene * s, const size_t n_photons_per_ligth = 10000, const bool specular = false);
-  void build_photon_map(const char * photons_file);
-  void build_photon_map();
+  void build_photon_map(const char * photons_file, const bool caustics = false);
+  void build_photon_map(const bool caustics = false);
 private:
   float m_h_radius;
   kdTree m_photon_map;
+  kdTree m_caustics_map;
   void trace_photon(Photon & ph, Scene * s, const unsigned int rec_level);
 };
 

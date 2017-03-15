@@ -165,7 +165,7 @@ public:
   void printTree();
   std::vector<Photon> findInRange (Vec3 min, Vec3 max) const;
   void find_by_distance(std::vector<Photon> & found, const glm::vec3 & point, const glm::vec3 & normal, const float distance, const unsigned int max) const;
-  void save_photon_list() const;
+  void save_photon_list(const char * file_name) const;
   size_t getNumPhotons();
   
 private:
