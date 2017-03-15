@@ -418,7 +418,7 @@ void kdTree::find_by_distance(std::vector<Photon> & found, const glm::vec3 & poi
     p_pos = glm::vec3((*it).position.x, (*it).position.y, (*it).position.z);
     if (glm::distance(p_pos, point) < distance && glm::dot(glm::normalize(p_pos - point), normal) < glm::pi<float>() / 2.0f)
       found.push_back((*it));
-    if (found.size() >= max)
-      break;
+    // if (found.size() >= max)
+    //   break;
   }
 }

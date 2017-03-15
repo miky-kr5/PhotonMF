@@ -40,6 +40,7 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
   AreaLight * al;
   Vec3 mn, mx;
   vector<Photon> photons;
+  vector<Photon> caustics;
 
   t = numeric_limits<float>::max();
   _f = NULL;
@@ -120,14 +121,19 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
       // 	mx = Vec3(i_pos.x + radius, i_pos.y + radius, i_pos.z + radius);
       // }
       m_photon_map.find_by_distance(photons, i_pos, n, m_h_radius, 1000);
-
-      for (vector<Photon>::iterator it = photons.begin(); it != photons.end(); it++) {
-	(*it).getColor(red, green, blue);
-	p_contrib += (_f->m_mat->m_diffuse / pi<float>()) * vec3(red, green, blue);
+      m_caustics_map.find_by_distance(caustics, i_pos, n, m_h_radius, 1000);
+      
+      for (Photon p : photons) {
+	p.getColor(red, green, blue);
+	p_contrib += vec3(red, green, blue);
       }
-      p_contrib /= (1.0f / pi<float>()) / (m_h_radius * m_h_radius);
-      // color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color) * (_f->m_mat->m_diffuse / pi<float>())) +
-      //  					    (_f->m_mat->m_specular * dir_spec_color) + p_contrib);
+      for (Photon p : caustics) {
+	p.getColor(red, green, blue);
+	p_contrib += vec3(red, green, blue);
+      }
+      p_contrib *= (1.0f / pi<float>()) / (m_h_radius * m_h_radius);
+      // color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color + p_contrib) * (_f->m_mat->m_diffuse / pi<float>())) +
+      // 					    (_f->m_mat->m_specular * dir_spec_color));
       color += p_contrib;
 
       // Determine the specular reflection color.
@@ -154,7 +160,6 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 	color += (1.0f - kr) * trace_ray(rr, s, rec_level + 1);
       } else if (rec_level >= m_max_depth)
 	  return vec3(0.0f);
-
     }
 
     // Return final color.
@@ -165,7 +170,6 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 }
 
 void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, const bool specular) {
-  Light * l;
   AreaLight * al = NULL;
   PointLight * pl = NULL;
   vec3 l_sample, s_normal, h_sample, power;
@@ -175,18 +179,18 @@ void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, c
   uint64_t total = 0, current = 0;
   vector<Figure *> spec_figures;
 
-  for (vector<Light *>::iterator it = s->m_lights.begin(); it != s->m_lights.end(); it++) {
-    total += (*it)->light_type() == Light::AREA ||
-      ((*it)->light_type() == Light::INFINITESIMAL &&
-       (dynamic_cast<SpotLight *>((*it)) == NULL || dynamic_cast<DirectionalLight *>((*it)) == NULL)) ? 1 : 0;
+  for (Light * light : s->m_lights) {
+    total += light->light_type() == Light::AREA ||
+      (light->light_type() == Light::INFINITESIMAL &&
+       (dynamic_cast<SpotLight *>(light) == NULL || dynamic_cast<DirectionalLight *>(light) == NULL)) ? 1 : 0;
   }
   total *= static_cast<uint64_t>(n_photons_per_ligth);
 
   // Separate specular objects to build the caustics photon map.
   if (specular) {
-    for (vector<Figure *>::iterator it = s->m_figures.begin(); it != s->m_figures.end(); it++)
-      if ((*it)->m_mat->m_refract || (*it)->m_mat->m_rho > 0.0f)
-	spec_figures.push_back((*it));
+    for (Figure * sf : s->m_figures)
+      if (sf->m_mat->m_refract || sf->m_mat->m_rho > 0.0f)
+	spec_figures.push_back(sf);
 
     if (spec_figures.size() == 0) {
       cout << ANSI_BOLD_YELLOW  << "There are no specular objects in the scene." << ANSI_RESET_STYLE << endl;
@@ -198,9 +202,7 @@ void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, c
   }
 
   cout << "Tracing a total of " << ANSI_BOLD_YELLOW << total << ANSI_RESET_STYLE << " primary photons:" << endl;
-  for (vector<Light *>::iterator it = s->m_lights.begin(); it != s->m_lights.end(); it++) {
-    l = *it;
-
+  for (Light * l : s->m_lights) {
     /* Only area lights and point lights supported right now. */
     if (l->light_type() == Light::INFINITESIMAL && (dynamic_cast<SpotLight *>(l) != NULL || dynamic_cast<DirectionalLight *>(l) != NULL))
       continue;
@@ -306,6 +308,7 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
 
   t = numeric_limits<float>::max();
   _f = NULL;
+  ph.getColor(red, green, blue);
 
   // Find the closest intersecting surface.
   r = Ray(ph.direction.x, ph.direction.y, ph.direction.z, ph.position.x, ph.position.y, ph.position.z);
@@ -334,7 +337,6 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
       sample = sample_hemisphere(r1, r2);
       rotate_sample(sample, n);
       normalize(sample);
-      ph.getColor(red, green, blue);
       color = (1.0f - _f->m_mat->m_rho) * (vec3(red, green, blue) * (_f->m_mat->m_diffuse / pi<float>()));
       p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
       p_dir = Vec3(sample.x, sample.y, sample.z);
@@ -354,6 +356,7 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
       }
 
     } else if (_f->m_mat->m_refract && rec_level < m_max_depth) {
+
       // If the material has transmission enabled, calculate the Fresnel term.
       kr = fresnel(r.m_direction, n, ph.ref_index, _f->m_mat->m_ref_index);
 

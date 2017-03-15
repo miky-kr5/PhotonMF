@@ -20,11 +20,7 @@ struct Vec3
 
   Vec3(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f): x(_x), y(_y), z(_z) { }
 
-  Vec3(const Vec3 & other) {
-    x = other.x;
-    y = other.y;
-    z = other.z;
-  }
+  Vec3(const Vec3 & other) = default;
   
   inline bool equalFloat(const float x, const float y)
   {
