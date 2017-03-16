@@ -32,7 +32,7 @@ using namespace glm;
 PhotonTracer::~PhotonTracer() { }
 
 vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
-  float t, _t, radius, red, green, blue, kr;
+  float t, _t, radius, red, green, blue, kr, w;
   Figure * _f;
   vec3 n, color, i_pos, ref, dir_diff_color, dir_spec_color, p_contrib;
   Ray mv_r, sr, rr;
@@ -122,19 +122,27 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
       // }
       m_photon_map.find_by_distance(photons, i_pos, n, m_h_radius, 1000);
       m_caustics_map.find_by_distance(caustics, i_pos, n, m_h_radius, 1000);
-      
+      photons.insert(photons.end(), caustics.begin(), caustics.end());
+
       for (Photon p : photons) {
+	w = max(0.0f, -dot(n, -p.direction.toVec3()));
+	w *= (1.0f - m_h_radius) / 25.0f;
 	p.getColor(red, green, blue);
-	p_contrib += vec3(red, green, blue);
+	p_contrib += vec3(red, green, blue) * w;
       }
-      for (Photon p : caustics) {
-	p.getColor(red, green, blue);
-	p_contrib += vec3(red, green, blue);
-      }
-      p_contrib *= (1.0f / pi<float>()) / (m_h_radius * m_h_radius);
+      
+      // for (Photon p : photons) {
+      // 	p.getColor(red, green, blue);
+      // 	p_contrib += vec3(red, green, blue);
+      // }
+      // for (Photon p : caustics) {
+      // 	p.getColor(red, green, blue);
+      // 	p_contrib += vec3(red, green, blue);
+      // }
+      // p_contrib *= (1.0f / pi<float>()) / (m_h_radius * m_h_radius);
       // color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color + p_contrib) * (_f->m_mat->m_diffuse / pi<float>())) +
       // 					    (_f->m_mat->m_specular * dir_spec_color));
-      color += p_contrib;
+      color += (1.0f - _f->m_mat->m_rho) * p_contrib;
 
       // Determine the specular reflection color.
       if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
