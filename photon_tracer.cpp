@@ -32,7 +32,7 @@ using namespace glm;
 PhotonTracer::~PhotonTracer() { }
 
 vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
-  float t, _t, radius, red, green, blue, kr, w;
+  float t, _t, red, green, blue, kr, radius;
   Figure * _f;
   vec3 n, color, i_pos, ref, dir_diff_color, dir_spec_color, p_contrib;
   Ray mv_r, sr, rr;
@@ -120,28 +120,31 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
       // 	mn = Vec3(i_pos.x - radius, i_pos.y - radius, i_pos.z - radius);
       // 	mx = Vec3(i_pos.x + radius, i_pos.y + radius, i_pos.z + radius);
       // }
+
+      radius = m_h_radius;
       m_photon_map.find_by_distance(photons, i_pos, n, m_h_radius, 1000);
+      while(photons.size() == 0 && radius < 5.0) {
+	radius *= 2;
+	m_photon_map.find_by_distance(photons, i_pos, n, m_h_radius, 1000);
+      }
+
+      radius = m_h_radius;
       m_caustics_map.find_by_distance(caustics, i_pos, n, m_h_radius, 1000);
+      while(caustics.size() == 0 && radius < 5.0) {
+	radius *= 2;
+	m_caustics_map.find_by_distance(caustics, i_pos, n, m_h_radius, 1000);
+      }
       photons.insert(photons.end(), caustics.begin(), caustics.end());
 
       for (Photon p : photons) {
-	w = max(0.0f, -dot(n, -p.direction.toVec3()));
-	w *= (1.0f - m_h_radius) / 25.0f;
 	p.getColor(red, green, blue);
-	p_contrib += vec3(red, green, blue) * w;
+	p_contrib += vec3(red, green, blue);
       }
+
+      p_contrib /= (1.0f - (2.0f / (3.0f * m_cone_filter_k))) * pi<float>() * (radius * radius);
       
-      // for (Photon p : photons) {
-      // 	p.getColor(red, green, blue);
-      // 	p_contrib += vec3(red, green, blue);
-      // }
-      // for (Photon p : caustics) {
-      // 	p.getColor(red, green, blue);
-      // 	p_contrib += vec3(red, green, blue);
-      // }
-      // p_contrib *= (1.0f / pi<float>()) / (m_h_radius * m_h_radius);
-      // color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color + p_contrib) * (_f->m_mat->m_diffuse / pi<float>())) +
-      // 					    (_f->m_mat->m_specular * dir_spec_color));
+      // color += (1.0f - _f->m_mat->m_rho) * ((dir_diff_color * (_f->m_mat->m_diffuse / pi<float>())) +
+      // 					    (_f->m_mat->m_specular * dir_spec_color)  + p_contrib);
       color += (1.0f - _f->m_mat->m_rho) * p_contrib;
 
       // Determine the specular reflection color.
@@ -337,7 +340,10 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
     if (!_f->m_mat->m_refract){
 #pragma omp critical
       {
-	m_photon_map.addPhoton(ph);
+	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
+	p_dir = Vec3(-ph.direction.x, -ph.direction.y, -ph.direction.z);
+	photon = Photon(p_pos, p_dir, red, green, blue, ph.ref_index);
+	m_photon_map.addPhoton(photon);
       }
       
       r1 = random01();
@@ -351,16 +357,16 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
       photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
 
       if (rec_level < m_max_depth)
-	trace_photon(photon, s, rec_level + 1);
+      	trace_photon(photon, s, rec_level + 1);
 
       if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
-	color = (_f->m_mat->m_rho) * vec3(red, green, blue);
-	i_pos += n * BIAS;
-	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
-	ph_dir = normalize(reflect(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n));
-	p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
-	photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
-	trace_photon(photon, s, rec_level + 1);
+      	color = (_f->m_mat->m_rho) * vec3(red, green, blue);
+      	i_pos += n * BIAS;
+      	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
+      	ph_dir = normalize(reflect(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n));
+      	p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
+      	photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
+      	trace_photon(photon, s, rec_level + 1);
       }
 
     } else if (_f->m_mat->m_refract && rec_level < m_max_depth) {
@@ -370,24 +376,24 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
 
       // Trace the reflected photon.
       if (kr > 0.0f) {
-	color = kr * vec3(red, green, blue);
-	i_pos += n * BIAS;
-	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
-	ph_dir = normalize(reflect(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n));
-	p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
-	photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
-	trace_photon(photon, s, rec_level + 1);
+      	color = kr * vec3(red, green, blue);
+      	i_pos += n * BIAS;
+      	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
+      	ph_dir = normalize(reflect(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n));
+      	p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
+      	photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
+      	trace_photon(photon, s, rec_level + 1);
       }
 
       // Trace the transmitted photon.
       if (kr < 1.0f) {
-	color = (1.0f - kr) * vec3(red, green, blue);
-	i_pos -= n * (2 * BIAS);
-	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
-	ph_dir = normalize(refract(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n, ph.ref_index / _f->m_mat->m_ref_index));
-	p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
-	photon = Photon(p_pos, p_dir, color.r, color.g, color.b, _f->m_mat->m_ref_index);
-	trace_photon(photon, s, rec_level + 1);
+      	color = (1.0f - kr) * vec3(red, green, blue);
+      	i_pos -= n * (2 * BIAS);
+      	p_pos = Vec3(i_pos.x, i_pos.y, i_pos.z);
+      	ph_dir = normalize(refract(vec3(ph.direction.x, ph.direction.y, ph.direction.z), n, ph.ref_index / _f->m_mat->m_ref_index));
+      	p_dir = Vec3(ph_dir.x, ph_dir.y, ph_dir.z);
+      	photon = Photon(p_pos, p_dir, color.r, color.g, color.b, _f->m_mat->m_ref_index);
+      	trace_photon(photon, s, rec_level + 1);
       }
     }
   }

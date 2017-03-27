@@ -63,6 +63,7 @@ static float g_gamma = 2.2f;
 static float g_exposure = 0.0f;
 static size_t g_photons = 15000;
 static float g_p_sample_radius = 0.01f;
+static float g_cone_filter_k = 1.0f;
 
 ////////////////////////////////////////////
 // Main function.
@@ -113,7 +114,7 @@ int main(int argc, char ** argv) {
 
   } else if(g_tracer == JENSEN) {
     cout << "Using " << ANSI_BOLD_YELLOW << "Jensen's photon mapping" << ANSI_RESET_STYLE << " with ray tracing." << endl;
-    p_tracer = new PhotonTracer(g_max_depth, g_p_sample_radius);
+    p_tracer = new PhotonTracer(g_max_depth, g_p_sample_radius, g_cone_filter_k);
     if (g_photons_file == NULL && g_caustics_file == NULL) {
       cout << "Building global photon map with " << ANSI_BOLD_YELLOW << g_photons / 2 << ANSI_RESET_STYLE << " primary photons per light source." << endl;
       p_tracer->photon_tracing(scn, g_photons / 2);
@@ -246,10 +247,12 @@ void print_usage(char ** const argv) {
   cerr << "  -p\tNumber of primary photons per light source." << endl;
   cerr << "    \tDefaults to 15000." << endl;
   cerr << "  -h\tHemisphere radius for photon map sampling (> 0)." << endl;
-  cerr << "    \tDefaults to 0.01f ." << endl;
+  cerr << "    \tDefaults to 0.01f." << endl;
   cerr << "  -k\tFile with photon definitions." << endl;
   cerr << "    \tSkips the photon tracing step using" << endl;
   cerr << "    \tthe photons defined in the specified file." << endl;
+  cerr << "  -l\tCone filter constant." << endl;
+  cerr << "    \tDefaults to 1.0f." << endl;
 }
 
 void parse_args(int argc, char ** const argv) {
@@ -263,7 +266,7 @@ void parse_args(int argc, char ** const argv) {
     exit(EXIT_FAILURE);
   }
 
-  while((opt = getopt(argc, argv, "-:t:s:w:f:o:r:g:e:p:h:k:c:")) != -1) {
+  while((opt = getopt(argc, argv, "-:t:s:w:f:o:r:g:e:p:h:k:c:l:")) != -1) {
     switch (opt) {
     case 1:
       g_input_file = (char *)malloc((strlen(optarg) + 1) * sizeof(char));
@@ -383,6 +386,15 @@ void parse_args(int argc, char ** const argv) {
     case 'c':
       g_caustics_file = (char *)malloc((strlen(optarg) + 1) * sizeof(char));
       strcpy(g_caustics_file, optarg);
+      break;
+
+    case 'l':
+      g_cone_filter_k = atof(optarg);
+      if (g_cone_filter_k <= 0.0f) {
+	cerr << "Cone filter constant must be greater than or equal to 1.0" << endl;
+	print_usage(argv);
+	exit(EXIT_FAILURE);
+      }
       break;
       
     case ':':
