@@ -32,9 +32,9 @@ using namespace glm;
 PhotonTracer::~PhotonTracer() { }
 
 vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
-  float t, _t, red, green, blue, kr, radius;
+  float t, _t, red, green, blue, kr, radius, r1, r2;
   Figure * _f;
-  vec3 n, color, i_pos, ref, dir_diff_color, dir_spec_color, p_contrib;
+  vec3 n, color, i_pos, ref, dir_diff_color, dir_spec_color, p_contrib, sample, amb_color;
   Ray mv_r, sr, rr;
   bool vis, is_area_light;
   AreaLight * al;
@@ -110,17 +110,7 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 	dir_spec_color += vis ? s->m_lights[l]->specular(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
       }
 
-      // TODO: Change photon map search method for hemisphere search.
-      // radius = m_h_radius;
-      // mn = Vec3(i_pos.x - radius, i_pos.y - radius, i_pos.z - radius);
-      // mx = Vec3(i_pos.x + radius, i_pos.y + radius, i_pos.z + radius);
-
-      // while((photons =  m_photon_map.findInRange(mn, mx)).size() == 0 && radius < 5.0) {
-      // 	radius *= 2;
-      // 	mn = Vec3(i_pos.x - radius, i_pos.y - radius, i_pos.z - radius);
-      // 	mx = Vec3(i_pos.x + radius, i_pos.y + radius, i_pos.z + radius);
-      // }
-
+      // Calculate photon map contribution
       radius = m_h_radius;
       m_photon_map.find_by_distance(photons, i_pos, n, m_h_radius, 1000);
       while(photons.size() == 0 && radius < 5.0) {
@@ -142,10 +132,28 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
       }
 
       p_contrib /= (1.0f - (2.0f / (3.0f * m_cone_filter_k))) * pi<float>() * (radius * radius);
+
+      // Calculate environment light contribution
+      vis = true;
+
+      r1 = random01();
+      r2 = random01();
+      sample = sample_hemisphere(r1, r2);
+      rotate_sample(sample, n);
+      rr = Ray(normalize(sample), i_pos + (sample * BIAS));
+
+      // Cast a shadow ray to determine visibility.
+      for (size_t f = 0; f < s->m_figures.size(); f++) {
+	if (s->m_figures[f]->intersect(rr, _t)) {
+	  vis = false;
+	  break;
+	}
+      }
+
+      amb_color = vis ? s->m_env->get_color(rr) * max(dot(n, rr.m_direction), 0.0f) / PDF : vec3(0.0f);
       
-      // color += (1.0f - _f->m_mat->m_rho) * ((dir_diff_color * (_f->m_mat->m_diffuse / pi<float>())) +
-      // 					    (_f->m_mat->m_specular * dir_spec_color)  + p_contrib);
-      color += (1.0f - _f->m_mat->m_rho) * p_contrib;
+      color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color + p_contrib + amb_color) * (_f->m_mat->m_diffuse / pi<float>())) +
+      					    (_f->m_mat->m_specular * dir_spec_color));
 
       // Determine the specular reflection color.
       if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {

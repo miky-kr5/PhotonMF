@@ -7,9 +7,19 @@
 	"position": [0.0, 0.0, -2.0],
 	"radius": 0.5,
 	"material": {
-	    "diffuse": [1.0, 1.0, 0.0],
+	    "diffuse": [1.0, 1.0, 1.0],
 	    "transmissive": true,
 	    "ref_index": 1.33
+	}
+    },
+
+    "sphere": {
+	"position": [0.0, 0.0, -2.0],
+	"radius": 0.25,
+	"material": {
+	    "diffuse": [1.0, 1.0, 1.0],
+	    "transmissive": true,
+	    "ref_index": 1.0
 	}
     },
 
@@ -26,7 +36,7 @@
 	"position": [0.0, -1.0, 0.0],
 	"normal": [0.0, 1.0, 0.0],
 	"material": {
-	    "diffuse": [0.0, 0.5, 1.0],
+	    "diffuse": [1.0, 1.0, 0.2],
 	    "specular": [0.0, 0.0, 0.0]
 	}
     }
