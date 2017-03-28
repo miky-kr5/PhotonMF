@@ -34,7 +34,7 @@ PhotonTracer::~PhotonTracer() { }
 vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
   float t, _t, red, green, blue, kr, radius, r1, r2;
   Figure * _f;
-  vec3 n, color, i_pos, ref, dir_diff_color, dir_spec_color, p_contrib, sample, amb_color;
+  vec3 n, color, i_pos, ref, dir_spec_color, p_contrib, c_contrib, sample, amb_color;
   Ray mv_r, sr, rr;
   bool vis, is_area_light;
   AreaLight * al;
@@ -106,7 +106,6 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 	}
 
 	// Evaluate the shading model accounting for visibility.
-	dir_diff_color += vis ? s->m_lights[l]->diffuse(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
 	dir_spec_color += vis ? s->m_lights[l]->specular(n, r, i_pos, *_f->m_mat) : vec3(0.0f);
       }
 
@@ -124,15 +123,20 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 	radius *= 2;
 	m_caustics_map.find_by_distance(caustics, i_pos, n, m_h_radius, 1000);
       }
-      photons.insert(photons.end(), caustics.begin(), caustics.end());
+      //photons.insert(photons.end(), caustics.begin(), caustics.end());
 
       for (Photon p : photons) {
 	p.getColor(red, green, blue);
 	p_contrib += vec3(red, green, blue);
       }
-
       p_contrib /= (1.0f - (2.0f / (3.0f * m_cone_filter_k))) * pi<float>() * (radius * radius);
 
+      for (Photon p : caustics) {
+	p.getColor(red, green, blue);
+	c_contrib += vec3(red, green, blue);
+      }
+      c_contrib /= (1.0f - (2.0f / (3.0f * m_cone_filter_k))) * pi<float>() * (radius * radius);
+      
       // Calculate environment light contribution
       vis = true;
 
@@ -152,7 +156,7 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 
       amb_color = vis ? s->m_env->get_color(rr) * max(dot(n, rr.m_direction), 0.0f) / PDF : vec3(0.0f);
       
-      color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color + p_contrib + amb_color) * (_f->m_mat->m_diffuse / pi<float>())) +
+      color += (1.0f - _f->m_mat->m_rho) * (((p_contrib + c_contrib + amb_color) * (_f->m_mat->m_diffuse / pi<float>())) +
       					    (_f->m_mat->m_specular * dir_spec_color));
 
       // Determine the specular reflection color.
@@ -358,7 +362,8 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
 	photon = Photon(p_pos, p_dir, red, green, blue, ph.ref_index);
 	m_photon_map.addPhoton(photon);
       }
-      
+
+      // Generate a photon for diffuse reflection.
       r1 = random01();
       r2 = random01();
       sample = sample_hemisphere(r1, r2);
@@ -369,9 +374,11 @@ void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_l
       p_dir = Vec3(sample.x, sample.y, sample.z);
       photon = Photon(p_pos, p_dir, color.r, color.g, color.b, ph.ref_index);
 
+      // Trace diffuse-reflected photon.
       if (rec_level < m_max_depth)
       	trace_photon(photon, s, rec_level + 1);
 
+      // Trace specular reflected photon.
       if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {
       	color = (_f->m_mat->m_rho) * vec3(red, green, blue);
       	i_pos += n * BIAS;
