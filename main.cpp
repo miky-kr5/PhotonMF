@@ -104,15 +104,19 @@ int main(int argc, char ** argv) {
   cout << "Maximum ray tree depth is " << ANSI_BOLD_YELLOW << g_max_depth << ANSI_RESET_STYLE << "." << endl;
 
   // Create the tracer object.
-  if (g_tracer == WHITTED) {
+  switch (g_tracer) {
+    
+  case WHITTED:
     cout << "Using " << ANSI_BOLD_YELLOW << "Whitted" << ANSI_RESET_STYLE << " ray tracing." << endl;
     tracer = static_cast<Tracer *>(new WhittedTracer(g_max_depth));
+    break;
 
-  } else if(g_tracer == MONTE_CARLO) {
+  case MONTE_CARLO:
     cout << "Using " << ANSI_BOLD_YELLOW << "Monte Carlo" << ANSI_RESET_STYLE << " path tracing." << endl;
     tracer = static_cast<Tracer *>(new PathTracer(g_max_depth));
+    break;
 
-  } else if(g_tracer == JENSEN) {
+  case JENSEN:
     cout << "Using " << ANSI_BOLD_YELLOW << "Jensen's photon mapping" << ANSI_RESET_STYLE << " with ray tracing." << endl;
     p_tracer = new PhotonTracer(g_max_depth, g_p_sample_radius, g_cone_filter_k);
     if (g_photons_file == NULL && g_caustics_file == NULL) {
@@ -121,6 +125,7 @@ int main(int argc, char ** argv) {
       cout << "Building caustics photon map with " << ANSI_BOLD_YELLOW << g_photons / 2 << ANSI_RESET_STYLE << " primary photons per light source." << endl;
       p_tracer->photon_tracing(scn, g_photons / 2, true);
       p_tracer->build_photon_map();
+
     } else {
       if (g_photons_file != g_caustics_file) {
 	cerr << "Must specify both a photon map file and a caustics file." << endl;
@@ -129,9 +134,11 @@ int main(int argc, char ** argv) {
       p_tracer->build_photon_map(g_photons_file);
       p_tracer->build_photon_map(g_caustics_file, true);
     }
+    
     tracer = static_cast<Tracer *>(p_tracer);
+    break;
 
-  } else {
+  default:
     cerr << "Must specify a ray tracer with \"-t\"." << endl;
     print_usage(argv);
     return EXIT_FAILURE;

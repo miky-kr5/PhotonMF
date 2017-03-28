@@ -288,8 +288,13 @@ void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, c
 void PhotonTracer::build_photon_map(const char * photons_file, const bool caustics) {
   Photon ph;
   float x, y, z, dx, dy, dz, r, g, b, rc;
-  ifstream ifs(photons_file, ios::in);
+  ifstream ifs;
 
+  if (photons_file == NULL)
+    return;
+  
+  ifs.open(photons_file);
+  
   if (!ifs.is_open()) {
     cerr << "Failed to open the file " << photons_file << " for reading." << endl;
     exit(EXIT_FAILURE);
