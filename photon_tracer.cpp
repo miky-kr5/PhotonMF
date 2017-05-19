@@ -111,14 +111,24 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 
       // Calculate photon map contribution
       radius = m_h_radius;
+#ifdef ENABLE_KD_TREE
+      Vec3 vmin(i_pos.x - m_h_radius, i_pos.y - m_h_radius, i_pos.z - m_h_radius);
+      Vec3 vmax(i_pos.x + m_h_radius, i_pos.y + m_h_radius, i_pos.z + m_h_radius);
+      photons = m_photon_map.findInRange(vmin, vmax);
+#else
       m_photon_map.find_by_distance(photons, i_pos, n, m_h_radius, 1000);
+#endif
       while(photons.size() == 0 && radius < 5.0) {
 	radius *= 2;
 	m_photon_map.find_by_distance(photons, i_pos, n, m_h_radius, 1000);
       }
 
       radius = m_h_radius;
+#ifdef ENABLE_KD_TREE
+      caustics = m_photon_map.findInRange(vmin, vmax);
+#else
       m_caustics_map.find_by_distance(caustics, i_pos, n, m_h_radius, 1000);
+#endif
       while(caustics.size() == 0 && radius < 5.0) {
 	radius *= 2;
 	m_caustics_map.find_by_distance(caustics, i_pos, n, m_h_radius, 1000);
@@ -237,11 +247,14 @@ void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, c
 
     assert(pl != NULL || al != NULL);
     
-#pragma omp parallel for schedule(dynamic, 1) private(l_sample, s_normal, h_sample, r1, r2) shared(current)
+#pragma omp parallel for schedule(dynamic, 1) private(l_sample, s_normal, h_sample, r1, r2, power, ls, dir, ph) shared(al, pl, current)
     for (size_t p = 0; p < n_photons_per_ligth; p++) {
       if (al != NULL) {
-	l_sample = al->sample_at_surface();
-	s_normal = al->normal_at_last_sample();
+#pragma omp critical
+	{
+	  l_sample = al->sample_at_surface();
+	  s_normal = al->normal_at_last_sample();
+	}
 	l_sample = l_sample + (BIAS * s_normal);
 	
 	if (!specular || (specular && spec_figures.size() == 0)) {
@@ -319,10 +332,12 @@ void PhotonTracer::build_photon_map(const char * photons_file, const bool causti
 
 void PhotonTracer::build_photon_map(const bool caustics) {
   cout << "Building photon map Kd-tree." << endl;
+#ifdef ENABLE_KD_TREE
   if (!caustics)
     m_photon_map.buildKdTree();
   else
-    m_caustics_map.buildKdTree();
+  m_caustics_map.buildKdTree();
+#endif
 }
 
 void PhotonTracer::trace_photon(Photon & ph, Scene * s, const unsigned int rec_level) {

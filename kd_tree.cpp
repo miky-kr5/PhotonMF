@@ -139,96 +139,206 @@ void kdTree::addPhoton(Photon p)
   Photons.push_back(p);
 }
 
-void kdTree::createNodeKdTree(treeNode** node, std::vector<Photon> & originalData , int* xyz, int* yzx, int* zxy, superKey key, int begin, int end, int* xyz_2, int* yzx_2, int* zxy_2)
+void kdTree::createNodeKdTree(treeNode** node, std::vector<Photon> originalData , int xyz[], int yzx[], int zxy[], superKey key, int begin, int end, int fullsize)
 {
-  if(end - begin < 2)
+
+  int size = end - begin;
+
+  if(size <= 2)
+  {
+    if(size < 2)
     {
       switch(key)
-	{
-	case XYZ:
-	  *node = new treeNode(originalData[xyz[begin]], XYZ);
-	  //std::cout << "Photon posicion " << xyz[begin] << " " << originalData[xyz[begin]] << std::endl;
-	  break;
-	case YZX:
-	  *node = new treeNode(originalData[yzx[begin]], YZX);
-	  //std::cout << "Photon posicion " << yzx[begin] << " " << originalData[yzx[begin]] << std::endl;
-	  break;
-	case ZXY:
-	  *node = new treeNode(originalData[zxy[begin]], ZXY);
-	  //std::cout << "Photon posicion " << zxy[begin] << " " << originalData[zxy[begin]] << std::endl;
-	  break;
-	}
+      {
+        case XYZ:
+          *node = new treeNode(originalData[xyz[begin]], XYZ);
+          if(size == 1)
+          {
+            (*node)->setChildsFlag(true);
+            *((*node)->getRightChild()) = new treeNode(originalData[xyz[end]], YZX);
+          }
+        break;
+        case YZX:
+          *node = new treeNode(originalData[yzx[begin]], YZX);
+          if(size == 1)
+          {
+            (*node)->setChildsFlag(true);
+            *((*node)->getRightChild()) = new treeNode(originalData[yzx[end]], ZXY);
+          }
+        break;
+        case ZXY:
+          *node = new treeNode(originalData[zxy[begin]], ZXY);
+          if(size == 1)
+          {
+            (*node)->setChildsFlag(true);
+            *((*node)->getRightChild()) = new treeNode(originalData[zxy[end]], XYZ);
+          }
+        break;
+      }
+    }
+    else
+    {
+      int mid = (begin + end) / 2;
 
-      return;
+      switch(key)
+      {
+        case XYZ:
+          *node = new treeNode(originalData[xyz[mid]], XYZ);
+          *((*node)->getLeftChild()) = new treeNode(originalData[xyz[begin]], YZX);
+          *((*node)->getRightChild()) = new treeNode(originalData[xyz[end]], YZX);
+        break;
+        case YZX:
+          *node = new treeNode(originalData[yzx[mid]], YZX);
+          *((*node)->getLeftChild()) = new treeNode(originalData[yzx[begin]], ZXY);
+          *((*node)->getRightChild()) = new treeNode(originalData[yzx[end]], ZXY);
+        break;
+        case ZXY:
+          *node = new treeNode(originalData[zxy[mid]], ZXY);
+          *((*node)->getLeftChild()) = new treeNode(originalData[zxy[begin]], XYZ);
+          *((*node)->getRightChild()) = new treeNode(originalData[zxy[end]], XYZ);
+        break;
+      }
     }
 
+    return;
+  }
+
   int mid = (begin + end) / 2;
-	
+  
   switch(key)
-    {
+  {
     case XYZ:
       *node = new treeNode(originalData[xyz[mid]], XYZ);
       (*node)->setChildsFlag(true);
+      //std::cout << "CUT XYZ: " << xyz[mid] << std::endl;
       //std::cout << "Photon posicion " << xyz[mid] << " " << originalData[xyz[mid]] << std::endl;
-      reorderArrays(originalData, yzx, zxy, begin, mid, end, xyz[mid], XYZ, yzx_2, zxy_2);
+      reorderArrays(originalData, yzx, zxy, begin, mid, end, xyz[mid], XYZ);
+      xyz[mid] = -1;
       key = YZX;
       break;
     case YZX:
       *node = new treeNode(originalData[yzx[mid]], YZX);
       (*node)->setChildsFlag(true);
+      //std::cout << "CUT YZX: " << yzx[mid] << std::endl;
       //std::cout << "Photon posicion " << yzx[mid] << " " << originalData[yzx[mid]] << std::endl;
-      reorderArrays(originalData, xyz, zxy, begin, mid, end, yzx[mid], YZX, xyz_2, zxy_2);
+      reorderArrays(originalData, xyz, zxy, begin, mid, end, yzx[mid], YZX);
+      yzx[mid] = -1;
       key = ZXY;
       break;
     case ZXY:
       *node = new treeNode(originalData[zxy[mid]], ZXY);
       (*node)->setChildsFlag(true);
+      //std::cout << "CUT ZXY: " << zxy[mid] << std::endl;
       //std::cout << "Photon posicion " << zxy[mid] << " " << originalData[zxy[mid]] << std::endl;
-      reorderArrays(originalData, xyz, yzx, begin, mid, end, zxy[mid], ZXY, xyz_2, yzx_2);
+      reorderArrays(originalData, xyz, yzx, begin, mid, end, zxy[mid], ZXY);
+      zxy[mid] = -1;
       key = XYZ;
       break;
-    }
+  }
+
+  /*std::cout << "XYZ: ";
+  for(int i = 0; i < fullsize; i++)
+    std::cout << xyz[i]  << " ";
+
+  std::cout << std::endl << "YZX: ";
+  for(int i = 0; i < fullsize; i++)
+    std::cout << yzx[i]  << " ";
+  
+  std::cout << std::endl << "ZXY: ";
+  for(int i = 0; i < fullsize; i++)
+    std::cout << zxy[i]  << " ";
+
+  std::cout << std::endl << std::endl;*/
 
   //std::cout<<"Rama izquierda" << std::endl;
-  createNodeKdTree((*node)->getLeftChild(), originalData, xyz_2, yzx_2, zxy_2, key, begin, mid, xyz, yzx, zxy);
+  createNodeKdTree((*node)->getLeftChild(), originalData, xyz, yzx, zxy, key, begin, mid - 1, fullsize);
   //std::cout<<"Rama derecha" << std::endl;
-  createNodeKdTree((*node)->getRightChild(), originalData, xyz_2, yzx_2, zxy_2, key, mid + 1, end, xyz, yzx, zxy);
+  createNodeKdTree((*node)->getRightChild(), originalData, xyz, yzx, zxy, key, mid + 1, end, fullsize);
 }
 
-void kdTree::reorderArrays(std::vector<Photon> & originalData, int* A1, int* A2, int begin, int mid, int end, int orderIndex, superKey key, int* B1, int* B2)
+void kdTree::reorderArrays(std::vector<Photon> originalData, int A1[], int A2[], int begin, int mid, int end, int orderIndex, superKey key)
 {
-  int lowerindex1 = begin, higherindex1 = mid + 1, lowerindex2 = begin, higherindex2 = mid + 1;
+  std::vector<int> lower1, lower2, higher1, higher2;
 
-  for(int i = begin; i < end; i++)
+  for(int i = begin; i <= end; i++)
+  {   
+    if(A1[i] != orderIndex)
     {
-      if(A1[i] != orderIndex)
-	{
-	  if(originalData[A1[i]].lower(originalData[orderIndex], key))
-	    {
-	      B1[lowerindex1] = A1[i];
-	      lowerindex1++;
-	    }
-	  else
-	    {
-	      B1[higherindex1] = A1[i];
-	      higherindex1++;
-	    }
-	}
-
-      if(A2[i] != orderIndex)
-	{
-	  if(originalData[A2[i]].lower(originalData[orderIndex], key))
-	    {
-	      B2[lowerindex2] = A2[i];
-	      lowerindex2++;
-	    }
-	  else
-	    {
-	      B2[higherindex2] = A2[i];
-	      higherindex2++;
-	    }
-	}
+      if(originalData[A1[i]].lessEqual(originalData[orderIndex], key))
+        lower1.push_back(A1[i]);
+      else
+        higher1.push_back(A1[i]);
     }
+
+    if(A2[i] != orderIndex)
+    {
+      if(originalData[A2[i]].lessEqual(originalData[orderIndex], key))
+        lower2.push_back(A2[i]);
+      else
+        higher2.push_back(A2[i]);
+    }
+  }
+
+  std::copy(lower1.begin(), lower1.end(), &A1[begin]);
+  std::copy(higher1.begin(), higher1.end(), &A1[mid + 1]);
+
+  std::copy(lower2.begin(), lower2.end(), &A2[begin]);
+  std::copy(higher2.begin(), higher2.end(), &A2[mid + 1]);
+  
+  A1[mid] = A2[mid] = -1;
+
+  lower1.clear();
+  lower2.clear();
+  higher1.clear();
+  higher2.clear();
+}
+
+void kdTree::removeDuplicates(std::vector<Photon> &originalData, int* &xyz, int* &yzx, int* &zxy, int &size)
+{
+  if(size == 0) return;
+
+  std::vector<int> xyzNew;
+  std::vector<int> yzxNew;
+  std::vector<int> zxyNew;
+
+  xyzNew.push_back(xyz[0]);
+  yzxNew.push_back(yzx[0]);
+  zxyNew.push_back(zxy[0]);
+
+  for(int i = 1; i < size; i++)
+  {
+    if( !(originalData[xyz[i]] == originalData[xyz[i - 1]]) )
+      xyzNew.push_back(xyz[i]);
+    
+    if( !(originalData[yzx[i]] == originalData[yzx[i - 1]]) )
+      yzxNew.push_back(yzx[i]);
+    
+    if( !(originalData[zxy[i]] == originalData[zxy[i - 1]]) )
+      zxyNew.push_back(zxy[i]);
+  }
+
+  if(xyzNew.size() != size)
+  {
+    std::cout << size - xyzNew.size() << " duplicates removed" << std::endl;
+
+    delete []xyz;
+    delete []yzx;
+    delete []zxy;
+
+    size = xyzNew.size();
+
+    xyz = new int[size];
+    yzx = new int[size];
+    zxy = new int[size];
+
+    std::copy(xyzNew.begin(), xyzNew.end(), &xyz[0]);
+    std::copy(yzxNew.begin(), yzxNew.end(), &yzx[0]);
+    std::copy(zxyNew.begin(), zxyNew.end(), &zxy[0]);
+  }
+
+  xyzNew.clear();
+  yzxNew.clear();
+  zxyNew.clear();
 }
 
 bool kdTree::buildKdTree()
@@ -238,109 +348,37 @@ bool kdTree::buildKdTree()
   int *xyz = new int[size];
   int *yzx = new int[size];
   int *zxy = new int[size];
-  int *xyz_aux = new int[size];
-  int *xyz_aux2 = new int[size];
-  int *xyz_aux3 = new int[size];
-  int *yzx_aux = new int[size];
-  int *zxy_aux = new int[size];
 
-  cout << "Calculating medians." << endl;
+  int *aux = new int[size];
 
-#pragma omp parallel for schedule(dynamic, 1)
   for(int i = 0; i < size; i++)
-    {
-      xyz[i] = i;
-      yzx[i] = i;
-      zxy[i] = i;
-      xyz_aux[i] = i;
-      xyz_aux2[i] = i;
-      xyz_aux3[i] = i;
-    }
-
-  if (omp_get_max_threads() == 2) {
-
-#pragma omp parallel
-    {
-      if (omp_get_thread_num() == 0) {
-#pragma omp critical
-	{
-	  cout << "Sorting \x1b[1;33mXYZ\x1b[m." << endl;
-	}
-	MegeSort(xyz, xyz_aux, size, XYZ, Photons);
-	// restoreArray(xyz_aux, size);
-      } else if(omp_get_thread_num() == 1) {
-#pragma omp critical
-	{
-	  cout << "Sorting \x1b[1;33mYZX\x1b[m." << endl;
-	}
-	MegeSort(yzx, xyz_aux2, size, YZX, Photons);
-	// restoreArray(xyz_aux, size);
-      }
-    }
-
-    cout << "Sorting \x1b[1;33mZXY\x1b[m." << endl;
-    MegeSort(zxy, xyz_aux3, size, ZXY, Photons);
-    
-  } else if (omp_get_max_threads() >= 3) {
-#pragma omp parallel
-    {
-      if (omp_get_thread_num() == 0) {
-#pragma omp critical
-	{
-	  cout << "Sorting \x1b[1;33mXYZ\x1b[m." << endl;
-	}
-	MegeSort(xyz, xyz_aux, size, XYZ, Photons);
-	// restoreArray(xyz_aux, size);
-      } else if(omp_get_thread_num() == 1) {
-#pragma omp critical
-	{
-	  cout << "Sorting \x1b[1;33mYZX\x1b[m." << endl;
-	}
-	MegeSort(yzx, xyz_aux2, size, YZX, Photons);
-	// restoreArray(xyz_aux, size);
-      } else if (omp_get_thread_num() == 2) {
-#pragma omp critical
-	{
-	  cout << "Sorting \x1b[1;33mZXY\x1b[m." << endl;
-	}
-	MegeSort(zxy, xyz_aux3, size, ZXY, Photons);
-      }
-    }
-  } else {
-    cout << "Sorting \x1b[1;33mXYZ\x1b[m." << endl;
-    MegeSort(xyz, xyz_aux, size, XYZ, Photons);
-    // restoreArray(xyz_aux, size);
-    
-    cout << "Sorting \x1b[1;33mYZX\x1b[m." << endl;
-    MegeSort(yzx, xyz_aux2, size, YZX, Photons);
-    // restoreArray(xyz_aux, size);
-    
-    cout << "Sorting \x1b[1;33mZXY\x1b[m." << endl;
-    MegeSort(zxy, xyz_aux3, size, ZXY, Photons);
+  {
+    xyz[i] = i;
+    yzx[i] = i;
+    zxy[i] = i;
+    aux[i] = i;
   }
 
-#pragma omp parallel for schedule(dynamic, 1)
-  for(int i = 0; i < size; i++)
-    {
-      xyz_aux[i] = xyz[i];
-      yzx_aux[i] = yzx[i];
-      zxy_aux[i] = zxy[i];
-    }
+  std::cout << "Initial sorting of data" << std::endl;
 
-  cout << "Adding photons to the tree." << endl;
-  //createNodeKdTree(&root, Photons , xyz, yzx, zxy, XYZ, 0, size, xyz_aux, yzx_aux, zxy_aux);
+  MegeSort(xyz, aux, size, XYZ, Photons);
+  restoreArray(aux, size);
 
-  //printTree();
+  MegeSort(yzx, aux, size, YZX, Photons);
+  restoreArray(aux, size);
 
-  delete[] xyz;
-  delete[] yzx;
-  delete[] zxy;
-  delete[] xyz_aux;
-  delete[] xyz_aux2;
-  delete[] xyz_aux3;
-  delete[] yzx_aux;
-  delete[] zxy_aux;
-  
+  MegeSort(zxy, aux, size, ZXY, Photons);
+
+  std::cout << "Removing Doubles" << std::endl;
+  removeDuplicates(Photons, xyz, yzx, zxy, size);
+
+  createNodeKdTree(&root, Photons , xyz, yzx, zxy, XYZ, 0, size - 1, size);
+
+  delete []xyz;
+  delete []yzx;
+  delete []zxy;
+  delete []aux;
+ 
   return true;
 }
 

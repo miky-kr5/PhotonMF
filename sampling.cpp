@@ -1,15 +1,23 @@
+#ifdef _USE_CPP11_RANDOM
+#warning "Using C++11 random number generators."
 #include <random>
 #include <chrono>
 #include <functional>
+#else
+#include <cstdlib>
+#include <ctime>
+#endif
 
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
 #include "sampling.hpp"
 
+#ifdef _USE_CPP11_RANDOM
 using std::uniform_real_distribution;
 using std::mt19937;
 using std::bind;
+#endif
 using glm::mat3;
 using glm::abs;
 using glm::normalize;
@@ -20,14 +28,27 @@ using glm::pi;
 const float PDF = (1.0f / (2.0f * pi<float>()));
 
 static bool seeded = false;
+
+#ifdef _USE_CPP11_RANDOM
 static uniform_real_distribution<float> dist(0, 1);
 static mt19937 engine;
 static auto generator = bind(dist, engine);
+#endif
 
 float random01() {
-  if (!seeded)
+  if (!seeded) {
+#ifdef _USE_CPP11_RANDOM
     engine.seed(std::chrono::system_clock::now().time_since_epoch().count());
+#else
+    srand(time(NULL));
+#endif
+    seeded = true;
+  }
+#ifdef _USE_CPP11_RANDOM
   return generator();
+#else
+  return static_cast<float>(rand()) / RAND_MAX;
+#endif
 }
 
 vec2 sample_pixel(int i, int j, float w, float h, float a_ratio, float fov) {

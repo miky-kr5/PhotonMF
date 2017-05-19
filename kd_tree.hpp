@@ -9,7 +9,7 @@ enum superKey
   {
     XYZ,
     YZX,
-    ZXY
+    ZXY,
   };
 
 struct Vec3
@@ -172,28 +172,9 @@ private:
   treeNode* root;
   std::vector<Photon> Photons;
 
-  void createNodeKdTree(treeNode** node,
-			std::vector<Photon> & originalData ,
-			int* xyz,
-			int* yzx,
-			int* zxy,
-			superKey key,
-			int begin,
-			int end,
-			int* xyz_2,
-			int* yzx_2,
-			int* zxy_2);
-
-  void reorderArrays(std::vector<Photon> & originalData,
-		     int* A1,
-		     int* A2,
-		     int begin,
-		     int mid,
-		     int end,
-		     int orderIndex,
-		     superKey Key,
-		     int* B1,
-		     int* B2);
+  void createNodeKdTree(treeNode** node, std::vector<Photon> originalData , int xyz[], int yzx[], int zxy[], superKey key, int begin, int end, int fullsize);
+  void reorderArrays(std::vector<Photon> originalData, int A1[], int A2[], int begin, int mid, int end, int orderIndex, superKey key);
+  void removeDuplicates(std::vector<Photon> &originalData, int* &xyz, int* &yzx, int* &zxy, int &size);
 
   void printNode(treeNode* node);
 
