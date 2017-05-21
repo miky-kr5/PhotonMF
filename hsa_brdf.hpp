@@ -2,6 +2,8 @@
 #ifndef HSA_BRDF_HPP
 #define HSA_BRDF_HPP
 
+#include <glm/glm.hpp>
+
 #include "phong_brdf.hpp"
 
 using glm::normalize;

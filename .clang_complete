@@ -1,6 +1,6 @@
--ansi
+-std=c++11
 -pedantic
 -Wall
 -DGLM_FORCE_RADIANS
+-DUSE_CPP11_RANDOM
 -fopenmp
--std=c++11

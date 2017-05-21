@@ -118,9 +118,16 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 #else
       m_photon_map.find_by_distance(photons, i_pos, n, m_h_radius, 1000);
 #endif
+
       while(photons.size() == 0 && radius < 5.0) {
 	radius *= 2;
+#ifdef ENABLE_KD_TREE
+	vmin = Vec3(i_pos.x - m_h_radius, i_pos.y - m_h_radius, i_pos.z - m_h_radius);
+	vmax = Vec3(i_pos.x + m_h_radius, i_pos.y + m_h_radius, i_pos.z + m_h_radius);
+	photons = m_photon_map.findInRange(vmin, vmax);
+#else
 	m_photon_map.find_by_distance(photons, i_pos, n, m_h_radius, 1000);
+#endif
       }
 
       radius = m_h_radius;
@@ -129,11 +136,17 @@ vec3 PhotonTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
 #else
       m_caustics_map.find_by_distance(caustics, i_pos, n, m_h_radius, 1000);
 #endif
+
       while(caustics.size() == 0 && radius < 5.0) {
 	radius *= 2;
+#ifdef ENABLE_KD_TREE
+	vmin = Vec3(i_pos.x - m_h_radius, i_pos.y - m_h_radius, i_pos.z - m_h_radius);
+	vmax = Vec3(i_pos.x + m_h_radius, i_pos.y + m_h_radius, i_pos.z + m_h_radius);
+	photons = m_caustics_map.findInRange(vmin, vmax);
+#else
 	m_caustics_map.find_by_distance(caustics, i_pos, n, m_h_radius, 1000);
+#endif
       }
-      //photons.insert(photons.end(), caustics.begin(), caustics.end());
 
       for (Photon p : photons) {
 	p.getColor(red, green, blue);
