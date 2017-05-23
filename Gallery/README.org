@@ -1,0 +1,37 @@
+* PhotonMF Gallery
+
+Some images rendered with PhotonMF
+
+** Whitted Ray Tracing
+
+[[file:whitted_samples_100_time_18s.png]]
+
+** Monte Carlo Ray Tracing (Path Tracing)
+
+*** Furnace Test
+
+[[file:montecarlo_furnace_test_samples_1000_time_1m_3s.png]]
+
+*** Image Based Lightning
+
+[[file:montecarlo_samples_5000_exposure_-0.5_time_19m_3s.png]]
+
+*** Other Images
+
+[[file:montecarlo_samples_1000_exposure_-2_time_26m_33s.png]]
+
+[[file:montecarlo_samples_10000_exposure_-3_time_24m_24s.png]]
+
+[[file:montecarlo_samples_25000_exposure_-2_time_2880m_approx.png]]
+
+[[file:montecarlo_samples_100000_exposure_-2_time_235_m_17s.png]]
+
+** Photon Mapping
+
+[[file:jensen_primary-photons_350000_radius_0.1_cone-filter_1.1_samples_10_time_247m_27s.png]]
+
+[[file:jensen_primary-photons_500000_radius_0.1_cone-filter_1.1_samples_10_time_1212m_28s.png]]
+
+[[file:jensen_primary-photons_2000000_radius_0.1_cone-filter_1.1_samples_1_exposure_-1_time_375m_45s.png]]
+
+[[file:jensen_primary-photons_2000000_radius_0.1_cone-filter_1.1_samples_1_time_120m.png]]
