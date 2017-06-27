@@ -4,3 +4,4 @@
 -DGLM_FORCE_RADIANS
 -DUSE_CPP11_RANDOM
 -fopenmp
+-fno-builtin

@@ -122,8 +122,7 @@ vec3 PathTracer::trace_ray(Ray & r, Scene * s, unsigned int rec_level) const {
       amb_color = vis ? s->m_env->get_color(rr) * max(dot(n, rr.m_direction), 0.0f) / PDF : vec3(0.0f);
 
       // Add lighting.
-      color += (1.0f - _f->m_mat->m_rho) * (((dir_diff_color + ind_color + amb_color) * (_f->m_mat->m_diffuse / pi<float>())) +
-					    (_f->m_mat->m_specular * dir_spec_color));
+      color += ((dir_diff_color + ind_color + amb_color) * (_f->m_mat->m_diffuse / pi<float>())) + (_f->m_mat->m_specular * dir_spec_color);
 
       // Determine the specular reflection color.
       if (_f->m_mat->m_rho > 0.0f && rec_level < m_max_depth) {

@@ -64,6 +64,8 @@ static float g_exposure = 0.0f;
 static size_t g_photons = 15000;
 static float g_p_sample_radius = 0.01f;
 static float g_cone_filter_k = 1.0f;
+static int g_max_photons = 7000000;
+static int g_max_search  = 5000;
 
 ////////////////////////////////////////////
 // Main function.
@@ -118,7 +120,7 @@ int main(int argc, char ** argv) {
 
   case JENSEN:
     cout << "Using " << ANSI_BOLD_YELLOW << "Jensen's photon mapping" << ANSI_RESET_STYLE << " with ray tracing." << endl;
-    p_tracer = new PhotonTracer(g_max_depth, g_p_sample_radius, g_cone_filter_k);
+    p_tracer = new PhotonTracer(g_max_depth, g_p_sample_radius, g_cone_filter_k, g_max_photons, g_max_search);
     if (g_photons_file == NULL && g_caustics_file == NULL) {
       cout << "Building global photon map with " << ANSI_BOLD_YELLOW << g_photons / 2 << ANSI_RESET_STYLE << " primary photons per light source." << endl;
       p_tracer->photon_tracing(scn, g_photons / 2);
@@ -260,6 +262,10 @@ void print_usage(char ** const argv) {
   cerr << "    \tthe photons defined in the specified file." << endl;
   cerr << "  -l\tCone filter constant." << endl;
   cerr << "    \tDefaults to 1.0f." << endl;
+  cerr << "  -m\tMax number of photons in the photon map." << endl;
+  cerr << "    \tDefaults to 7000000." << endl;
+  cerr << "  -z\tMax number of photons for radiance estimate." << endl;
+  cerr << "    \tDefaults to 5000." << endl;
 }
 
 void parse_args(int argc, char ** const argv) {
@@ -273,7 +279,7 @@ void parse_args(int argc, char ** const argv) {
     exit(EXIT_FAILURE);
   }
 
-  while((opt = getopt(argc, argv, "-:t:s:w:f:o:r:g:e:p:h:k:c:l:")) != -1) {
+  while((opt = getopt(argc, argv, "-:t:s:w:f:o:r:g:e:p:h:k:c:l:m:z:")) != -1) {
     switch (opt) {
     case 1:
       g_input_file = (char *)malloc((strlen(optarg) + 1) * sizeof(char));
@@ -402,6 +408,26 @@ void parse_args(int argc, char ** const argv) {
 	print_usage(argv);
 	exit(EXIT_FAILURE);
       }
+      break;
+
+      case 'm':
+      g_max_photons = atoi(optarg);
+      if (g_max_photons <= 0) {
+	cerr << "Need to trace at least 1 photon." << endl;
+	print_usage(argv);
+	exit(EXIT_FAILURE);
+      }
+
+      break;
+
+      case 'z':
+      g_max_search = atoi(optarg);
+      if (g_max_search <= 0) {
+	cerr << "Need to search at least 1 photon." << endl;
+	print_usage(argv);
+	exit(EXIT_FAILURE);
+      }
+
       break;
       
     case ':':
