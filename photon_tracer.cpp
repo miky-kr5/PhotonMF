@@ -326,6 +326,7 @@ void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, c
   cout << "Generated " << ANSI_BOLD_YELLOW << m_photon_map.stored_photons << ANSI_RESET_STYLE << " total photons." << endl;
   //m_photon_map.save_photon_list(specular ? "caustics.txt" : "photons.txt");
 
+#ifdef SAVE_FILES
   string file_name = specular ? "caustics.txt" : "photons.txt";
   
   cout << "Writing photons to \x1b[1;33m" << file_name << "\x1b[m" << endl;
@@ -340,6 +341,7 @@ void PhotonTracer::photon_tracing(Scene * s, const size_t n_photons_per_ligth, c
       r << " " << g << " " << b << " " << m_photon_map.photons[i].ref_index << endl;
   }
   ofs.close();
+#endif
 }
 
 void PhotonTracer::build_photon_map(const char * photons_file, const bool caustics) {

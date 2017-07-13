@@ -7,7 +7,7 @@ OBJECTS = main.o sampling.o camera.o environment.o disk.o plane.o sphere.o \
           path_tracer.o whitted_tracer.o rgbe.o kd_tree.o photon_tracer.o \
           photonmap.o
 DEPENDS = $(OBJECTS:.o=.d)
-CXXFLAGS = -std=c++11 -pedantic -Wall -DGLM_FORCE_RADIANS -fopenmp -DUSE_CPP11_RANDOM -fno-builtin #-DENABLE_KD_TREE
+CXXFLAGS = -std=c++11 -pedantic -Wall -DGLM_FORCE_RADIANS -fopenmp -DUSE_CPP11_RANDOM -fno-builtin #-DENABLE_KD_TREE -DSAVE_FILES
 LDLIBS = -lfreeimage -ljson_spirit
 
 .PHONY: all
